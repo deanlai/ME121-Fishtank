@@ -5,25 +5,25 @@
 //--------------------------------------------------------
 
 // delcare global pins
-int salinityPowerPin = 8;
+const int SALINITY_POWER_PIN = 8;
 
 
 void setup(){
-pinMode(salinityPowerPin, OsUTPUT);
+pinMode(SALINITY_POWER_PIN, OsUTPUT);
 Serial.begin(9600);
 
 }
 
 void loop(){
     // declare local pins
-    int salinityReadingPin = A0;
+    const int SALINITY_READING_PIN = A0;
 
     // setup variables
-    int numReadings = 15;analogRead
+    int numReadings = 15;
     float salinityReading = 0.0;
 
     // take a salinity reading
-    salinityReading = takeReading(salinityPowerPin, salinityReadingPin, numReadings);
+    salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
     int currentTime = millis();
 
     // Print to Serial Monitor
