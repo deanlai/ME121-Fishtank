@@ -21,10 +21,12 @@ void loop(){
 
     // setup variables
     int numReadings = 15;
-    float salinityReading = 0.0;
+    int salinityReading = 0;
+    float voltage = 0.0;
 
     // take a salinity reading
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
+    voltage = salinityReading*5/1023.0
     int currentTime = millis();
 
     /* Comment out whichever Serial dialog is not needed
@@ -32,7 +34,7 @@ void loop(){
     Serial.print("Time: ");
     Serial.print(currentTime);
     Serial.print("  |  Voltage: ");
-    Serial.println(salinityReading*5/1023.0);
+    Serial.println(voltage);
     */
 
     // Print to Serial Monitor (for data analysis)
