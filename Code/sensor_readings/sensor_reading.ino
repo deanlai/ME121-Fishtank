@@ -36,9 +36,6 @@ void loop(){
     */
 
     // Print to Serial Monitor (for data analysis)
-    Serial.print("Time: ");
-    Serial.print(currentTime);
-    Serial.print("  |  Voltage: ");
     Serial.println(salinityReading);
     
 }
