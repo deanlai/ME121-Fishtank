@@ -10,7 +10,7 @@ const int SALINITY_POWER_PIN = 8;
 
 
 void setup(){
-pinMode(SALINITY_POWER_PIN, OsUTPUT);
+pinMode(SALINITY_POWER_PIN, OUTPUT);
 Serial.begin(9600);
 
 }
