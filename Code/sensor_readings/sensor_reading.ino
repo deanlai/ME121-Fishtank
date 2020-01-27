@@ -2,7 +2,7 @@
 // Sensor readings program
 // Version 1.0
 // 1/27/20
-// North American Counsel on Aquatic Housing and Development
+// The North American Council on Aquatic Housing and Development
 //--------------------------------------------------------
 
 // delcare global pins
