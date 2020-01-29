@@ -20,13 +20,13 @@ void loop(){
     const int SALINITY_READING_PIN = A0;
 
     // setup variables
-    int numReadings = 15;
+    int numReadings = 30;
     int salinityReading = 0;
     float voltage = 0.0;
 
     // take a salinity reading
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
-    voltage = salinityReading*5/1023.0
+    voltage = salinityReading*5/1023.0;
     int currentTime = millis();
 
     /* Comment out whichever Serial dialog is not needed
