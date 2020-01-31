@@ -10,6 +10,11 @@ rho30 = [ 9.0  7.5  6.5  5.6   4.6   3.8   3.3   2.8   2.4];  % Ohm-m at 30C
 % Convert salinity data from ppm to wt_percent
 wt_percent = Sppm./1000;
 
+plot(wt_percent,rho20,'o',wt_percent,rho30,'o');
+xlabel('Salinity (wt%)');
+ylabel('Resistivity (Ohm-m)');
+title('Fig. 1: Resistivity as a function of salinity');
+
 % Convert resisitivity to resistance
 L = 0.020;      % Length between probes on the sensor
 d = 0.015;      % Interior diamter of the sensor
@@ -49,13 +54,14 @@ Sfit = linspace(min(wt_percent), max(wt_percent));  %  Generate a vector of 100 
 rho30fit = c(1)*Sfit.^c(2);                         %  Evaluate curve fit at each Sfit(i)
 
 % -- Plot on linear axes
+figure
 plot(wt_percent,R20,'o',Sfit,rho20fit,'r:')  % Origial data is 'o'; fit is red dotted
 hold on;
 plot(wt_percent,R30,'o',Sfit,rho30fit,'g:')  % Origial data is 'o'; fit is green dotted
 hold off;
 xlabel('Salinity (wt%)')
 ylabel('Resistivity (ohm-m)')
-title('Linear fit of data')
+title('Fig. 2: Linear fit of data')
 
 % -- Make loglog plot of the same data
 figure   %  open up new plot window
@@ -65,22 +71,24 @@ loglog(wt_percent,R30,'o',Sfit,rho30fit,'g:');  % Original data is 'o'; fit is g
 hold off;
 xlabel('Salinity (wt%)')
 ylabel('Resistivity (ohm-m)')
-title('Log fit of data')
+title('Fig. 3: Log fit of data')
 
 % Computes voltage divider output
 Vs = 12;    % Voltage input
 Rf = 10000;    % Value of 10 kOhm resistor
-Rs20 = rho20fit;
-Rs30 = rho30fit;
-v_out20 = Vs*(Rf./(Rf + Rs20));
-v_out30 = Vs*(Rf./(Rf + Rs30));
+
+v_out20 = Vs*(Rf./(Rf + rho20fit));
+v_out30 = Vs*(Rf./(Rf + rho30fit));
 
 % Plots voltage divider output versus salinity
 figure
-plot(wt_percent,R20,'o',Sfit,v_out20,'r:')  % Origial data is 'o'; fit is red dotted
+plot(Sfit,v_out20,'r:');
 hold on;
-plot(wt_percent,R30,'o',Sfit,v_out30,'g:');  % Original data is 'o'; fit is green dotted
+plot(Sfit,v_out30,'g:'); 
 hold off;
+xlabel('Salinity (wt%)');
+ylabel('Analog output (V)');
+title('Fig. 4: Analog output as a function of salinity');
 
 
 end
