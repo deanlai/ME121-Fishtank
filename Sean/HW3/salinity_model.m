@@ -2,7 +2,8 @@ function salinity_model
 % salinity_model  Use salinity data from Schlumberger to predict resistance
 %                 of the salinity sensor in the ME 121 fish tank
 
-% -- Resistivity data at 20C and 30C.  Sppm is salinity in parts per million
+% Import resistance data from resistanceData function.
+% Resistivity data at 20C and 30C.  Sppm is salinity in parts per million
 [Sppm, rho20, rho30] = resistanceData;
 
 % -- Convert Sppm to wt%
