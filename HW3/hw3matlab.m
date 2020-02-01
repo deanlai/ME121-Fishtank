@@ -16,9 +16,9 @@ ylabel('Resistivity (Ohm-m)');
 title('Fig. 1: Resistivity as a function of salinity');
 
 % Convert resisitivity to resistance
-L = 0.020;      % Length between probes on the sensor
-d = 0.00843;      % Interior diamter of the sensor
-r = d/2;        % Converts dimater to radius
+L = 0.020;      % Length between probes on the sensor in meters
+d = 0.00843;    % Interior diameter of the sensor in meters
+r = d/2;        % Converts diameter to radius
 A = pi*r^2;     % Calculates cross-sectional area of the conductor
 R20 = (rho20*L)/A;
 R30 = (rho30*L)/A;
