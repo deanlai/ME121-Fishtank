@@ -3,9 +3,7 @@ function salinity_model
 %                 of the salinity sensor in the ME 121 fish tank
 
 % -- Resistivity data at 20C and 30C.  Sppm is salinity in parts per million
-Sppm  = [ 500  600  700  800  1000  1200  1400  1700  2000];  % ppm
-rho20 = [11.2  9.5  8.0  7.1   5.6   4.8   4.2   3.4   2.9];  % Ohm-m at 20C
-rho30 = [ 9.0  7.5  6.5  5.6   4.6   3.8   3.3   2.8   2.4];  % Ohm-m at 30C
+[Sppm, rho20, rho30] = resistanceData;
 
 % -- Convert Sppm to wt%
 wt_pct = Sppm./10000;
@@ -45,11 +43,12 @@ ylabel('Resistance (ohms)')
 title('Resistance vs. Salinity')
 legend('20 C', '30 C')
 
-% Compute analog output values from resistance with voltage divider formula
-analog20 = 1023.*(10000./(R20 + 10000));
-analog30 = 1023.*(10000./(R30 + 10000));
-analog20_fit = 1023.*(10000./(R20_fit + 10000));
-analog30_fit = 1023.*(10000./(R30_fit + 10000));
+% Compute analog output values from resistance with voltage_divider
+% function. 1023 was used as v_in instead of scaling by 5/1023.
+analog20 = voltage_divider(1023, R20, 10000);
+analog30 = voltage_divider(1023, R30, 10000);
+analog20_fit = voltage_divider(1023, R20_fit, 10000);
+analog30_fit = voltage_divider(1023, R30_fit, 10000);
 
 figure % New figure window
 % -- Create plot of Analog output vs. weight percent with fit lines
