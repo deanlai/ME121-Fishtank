@@ -6,7 +6,8 @@ function rout = salinity_stats(filename)
 %
 % Output: r = mean of raw analog readings.  Default: no value is returned
 
-if nargin<1, filename='calibration_data.csv';  end   % Default data file name
+% -- Set filename
+if nargin<1, filename='calibration_data.csv';  end
 
 % -- Load data from a csv file of the four data sets
 r = importdata(filename);
@@ -38,7 +39,6 @@ fprintf('\nData in %s:\n',filename)
 for i = 1:4
     print_stats(r(:,i), i)
 end
-
 
 if nargout>0, rout=mean(r);  end
 
