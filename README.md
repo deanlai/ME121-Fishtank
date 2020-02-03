@@ -13,3 +13,5 @@ Individual code and homework found in folders under our names. Also, remember to
 For info on how to use VScode for arduino, go here:
 
 https://learn.sparkfun.com/tutorials/efficient-arduino-programming-with-arduino-cli-and-visual-studio-code/all
+
+All hail!
