@@ -54,6 +54,7 @@ void loop(){
     Serial.println();
 
     // Print to LCD Screen
+    lcd.setCursor(1,0); lcd.print("N.A.C.A.H.D.");
     lcd.setCursor(0,1); // Print to second row
     lcd.print("Percent salt: ");
     lcd.print(salinityPercentage, 4); // to 4 decimal places accuracy
