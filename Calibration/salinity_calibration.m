@@ -23,7 +23,7 @@ means = [mean(raw_data(:,1)),...
 means = round(means);
 
 % Create salinity matrix in wt%
-salinity = [0.00000001, 0.05, 0.10, 0.15];
+salinity = [0.000001, 0.05, 0.10, 0.15];
 
 % Generate curve fit constants and R^2 from calibration data using powfit
 [constants, r_squared] = powfit(salinity, means);
@@ -32,14 +32,14 @@ salinity = [0.00000001, 0.05, 0.10, 0.15];
 s_fit = linspace(min(salinity), max(salinity));
 analog_fit = constants(1)*s_fit.^constants(2);
 
-% Plot analog output vs. salinity
+% Plot Analog output vs. salinity
 plot(salinity, means, 'ro', s_fit, analog_fit, 'k--')
 xlabel('Salinity (%wt)')
 ylabel('Analog output')
 title('Analog Output vs. Salinity')
 
-% Plot Salinity vs. analog output
 figure
+% Plot Salinity vs. analog output
 plot(means, salinity, 'ro', analog_fit, s_fit, 'k--')
 ylabel('Salinity (%wt)')
 xlabel('Analog output')
