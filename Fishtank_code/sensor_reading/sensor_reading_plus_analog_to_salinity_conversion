@@ -3,15 +3,21 @@
 // Version 1.1
 // 1/27/20
 // The North American Council on Aquatic Housing and Development
+//NOTE: To run this code you must have downloaded the LiquidCrystal_I2C library (and added it to the sketch from the IDE), 
+//which is in Whitman's folder in the main directory
 //--------------------------------------------------------
 
 // delcare global pins
 const int SALINITY_POWER_PIN = 8;
-
+#include <Wire.h> //Include wire (i2c comm) and liquidcrystal libraries 
+#include <LiquidCrystal_I2C.h>
+LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 20, 4); //20x4 LCD screen, 0x27 is the address 
 
 void setup(){
 pinMode(SALINITY_POWER_PIN, OUTPUT);
 Serial.begin(9600);
+lcd.init(); //initiate LCD
+lcd. backlight(); //backlight on
 
 }
 
@@ -49,7 +55,16 @@ void loop(){
     Serial.print(" ");
     Serial.print(salinityPercentage);
     Serial.println();
-    
+
+    //Print to LCD Screen
+    lcd.setCursor(0,1);
+    lcd.print("Percent salt: ");
+    lcd.print(salinityPercentage, 4); //to 4 decimal places accuracy
+    lcd.setCursor(0, 2);
+    lcd.print("Analog read: ");
+    lcd.print(salinityReading);
+    delay(250); //delay between refresh
+     
 }
 
 float takeReading(int powerPin, int readingPin, int numReadings){
