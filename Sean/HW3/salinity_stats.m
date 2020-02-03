@@ -1,10 +1,19 @@
 function rout = salinity_stats(filename)
+%
+% ME 121-001
+% HW 3: Group Assignment
+% Sean Lai
+% 2/3/20
+%
 % salinty_stats  Load raw salinity data and plot histogram
 %
 % Input:  filename = (string) optional name of plain text file
 %                    that contains the data.  Default:  'salinity10a.txt'
+% 
+% Generates a histogram for each column in dataset
+% Prints statistics for each column in data set
 %
-% Output: r = mean of raw analog readings.  Default: no value is returned
+% Output: None
 
 % -- Set filename
 if nargin<1, filename='calibration_data.csv';  end
@@ -38,8 +47,4 @@ end
 fprintf('\nData in %s:\n',filename)
 for i = 1:4
     print_stats(r(:,i), i)
-end
-
-if nargout>0, rout=mean(r);  end
-
 end
