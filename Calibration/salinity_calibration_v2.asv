@@ -54,7 +54,7 @@ y_fwd_low = [analog(1), y_fwd_high(1)];
 % c_fwd_low --> constants for forward fit, low salinity
 c_fwd_low = polyfit(x_fwd_low, y_fwd_low, 1);
 
-% c_rev_low --> constants for reverse fit, low salinity
+% c_rev_low --> constants for forward fit, low salinity
 c_rev_low = polyfit(y_fwd_low, x_fwd_low, 1);
 
 % Print constants to console for use in Arduino control code
@@ -66,8 +66,8 @@ fprintf('constants: reverse, high\n');
 fprintf('%14.7e\n', c_rev);
 fprintf('constants: reverse, low\n');
 fprintf('%14.7e\n', c_rev_low);
-fprintf('breakpoints for function\n');
-fprintf(' %d\n', analog(1), y_fwd_high);
+fprintf('breakpoints for function');
+fprintf('%d',
 
 % Plot forward calibration curve
 % Analog output = f(Salinity)
