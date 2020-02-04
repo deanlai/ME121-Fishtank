@@ -23,7 +23,7 @@ means = [mean(raw_data(:,1)),...
 means = round(means);
 
 % Create salinity matrix in wt%
-salinity = [0.000001, 0.05, 0.10, 0.15];
+salinity = [0.0000001, 0.05, 0.10, 0.15];
 
 % Generate curve fit constants and R^2 from calibration data using powfit
 [constants, r_squared] = powfit(salinity, means);

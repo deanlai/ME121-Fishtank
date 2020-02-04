@@ -61,6 +61,7 @@ void loop(){
     lcd.setCursor(0, 2); // Print to third row
     lcd.print("Analog read: ");
     lcd.print(salinityReading);
+    lcd.print("   ");
     delay(250); // delay between refresh
      
 }
@@ -76,7 +77,11 @@ float takeReading(int powerPin, int readingPin, int numReadings){
         sum += analogRead(readingPin);
         delay(10);
     }
+    // Serial.print(sum);
+    // Serial.print(' ');
     digitalWrite(powerPin, 0); // Turn sensor off
     sum /= numReadings; // Average sum over readings
+    // Serial.println(sum);
+
     return sum;
 }

@@ -53,8 +53,7 @@ void loop()
     // setup variables
     int numReadings = 30;
     int salinityReading = 0;
-    float voltage = 0.0;
-    float salinityPercentage, consteq;
+    float salinityPercentage;
 
     // take a salinity reading
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
@@ -77,6 +76,7 @@ void loop()
     lcd.setCursor(0, 2);              // Print to third row
     lcd.print("Analog read: ");
     lcd.print(salinityReading);
+    lcd.print("   ");
     delay(250); // delay between refresh
 }
 
@@ -98,7 +98,7 @@ float takeReading(int powerPin, int readingPin, int numReadings)
     return sum;
 }
 
-float findSalinityPercentage(c1, c2, c3, c4, b1, b2, b3, reading) {
+float findSalinityPercentage(float c1, float c2, float c3, float c4, int b1, int b2, int b3, int reading) {
     // input c1, c2, c3, c4 --> polynomial constants for two line fits
     //       b1, b2, b3     --> breakpoints to determine regin for evaluation
     //       reading        --> analog reading value from sensor
@@ -109,17 +109,17 @@ float findSalinityPercentage(c1, c2, c3, c4, b1, b2, b3, reading) {
         return 0;
     }
     else if (reading < b2) {    // reading < 0.05 wt% breakpoint
-        return evaluatePolynomial(reading, c1, c2)
+        return evaluatePolynomial(reading, c1, c2);
     }
     else if (reading < b3) {    // reading < 0.15 wt% breakpoint
-        return evaluatePolynomial(reading, c3, c4)
+        return evaluatePolynomial(reading, c3, c4);
     }
     else{                       // reading > 0.15 wt% breakpoint
-        return evaluatePolynomial(b3, c3, c4);
+        return evaluatePolynomial(b3, c3, c4); // return value of polynomial at b3
     }
 }
 
-float evaluatePolynomial(x, c1, c2) {
+float evaluatePolynomial(int x, float c1, float c2) {
     // evaluates y = c1*x + c2 and returns y
     return c1*x + c2;
 }
