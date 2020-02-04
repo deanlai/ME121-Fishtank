@@ -99,6 +99,11 @@ float takeReading(int powerPin, int readingPin, int numReadings)
 }
 
 float findSalinityPercentage(c1, c2, c3, c4, b1, b2, b3, reading) {
+    // input c1, c2, c3, c4 --> polynomial constants for two line fits
+    //       b1, b2, b3     --> breakpoints to determine regin for evaluation
+    //       reading        --> analog reading value from sensor
+    // output: corresponding salinity in wt%
+
     // check breakpoints to determine function region
     if (reading < b1) {         // reading < DI water breakpoint
         return 0;
