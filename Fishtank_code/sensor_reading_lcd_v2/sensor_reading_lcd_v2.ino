@@ -78,6 +78,11 @@ void loop()
     lcd.print(salinityReading);
     lcd.print("   ");
     delay(250); // delay between refresh
+    if(salinityPercentage>0.1475) {
+      lcd.setCursor(0, 3);
+      lcd.print("Salinity too high. est:", evaluatePolynomial(reading, c3, c4); 
+    }
+    
 }
 
 float takeReading(int powerPin, int readingPin, int numReadings)
