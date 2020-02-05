@@ -20,8 +20,8 @@ void setup(){
     pinMode(SALINITY_POWER_PIN, OUTPUT);
     Serial.begin(9600);
 
-    lcd.init(); // initiate LCD
-    lcd.backlight(); // backlight on
+    lcd.init();         // initiate LCD
+    lcd.backlight();    // backlight on
 
 }
 
@@ -31,18 +31,15 @@ void loop(){
 
     // declare constants from power law fit
     const float c1 = 944.3844;
-    const float c2 = 0.1368; // constant inverse to solve for salinity
+    const float c2 = 0.1368;
 
     // setup variables
     int numReadings = 30;
     int salinityReading = 0;
-    float voltage = 0.0;
-    float salinityPercentage, consteq;
+    float salinityPercentage;
 
     // take a salinity reading
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
-    voltage = salinityReading*5/1023.0;
-    int currentTime = millis();
     
     // Convert from analog to salinity percentage using s = (a/c1)^(1/c2)
     salinityPercentage = pow(salinityReading/c1, 1/c2);
@@ -55,14 +52,14 @@ void loop(){
 
     // Print to LCD Screen
     lcd.setCursor(1,0); lcd.print("N.A.C.A.H.D.");
-    lcd.setCursor(0,1); // Print to second row
+    lcd.setCursor(0,1);                 // Print to second row
     lcd.print("Percent salt: ");
-    lcd.print(salinityPercentage, 4); // to 4 decimal places accuracy
-    lcd.setCursor(0, 2); // Print to third row
+    lcd.print(salinityPercentage, 4);   // to 4 decimal places accuracy
+    lcd.setCursor(0, 2);                // Print to third row
     lcd.print("Analog read: ");
-    lcd.print(salinityReading);
+    lcd.print(salinityReading);         // Add spaces to clear trailing digits
     lcd.print("   ");
-    delay(250); // delay between refresh
+    delay(250);                         // delay between refresh
      
 }
 
@@ -71,17 +68,14 @@ float takeReading(int powerPin, int readingPin, int numReadings){
     // output: average of numReadings readings
 
     float sum = 0.0;
-    digitalWrite(powerPin, 1); // Turn sensor on
-    delay(100); // Allow power to settle
-    for(int i=0; i<numReadings; i++){ // Take readings and sum
+    digitalWrite(powerPin, 1);          // Turn sensor on
+    delay(100);                         // Allow power to settle
+    for(int i=0; i<numReadings; i++){   // Take readings and sum
         sum += analogRead(readingPin);
         delay(10);
     }
-    // Serial.print(sum);
-    // Serial.print(' ');
-    digitalWrite(powerPin, 0); // Turn sensor off
-    sum /= numReadings; // Average sum over readings
-    // Serial.println(sum);
+    digitalWrite(powerPin, 0);          // Turn sensor off
+    sum /= numReadings;                 // Average sum over readings
 
     return sum;
 }
