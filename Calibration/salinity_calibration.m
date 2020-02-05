@@ -43,7 +43,7 @@ figure
 plot(means, salinity, 'ro', analog_fit, s_fit, 'k--')
 ylabel('Salinity (%wt)')
 xlabel('Analog output')
-title('Analog Output vs. Salinity')
+title('Salinity vs. Analog Output')
 
 
 
