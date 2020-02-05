@@ -72,12 +72,12 @@ fprintf(' %d\n', analog(1), y_fwd_high);
 % Plot forward calibration curve
 % Analog output = f(Salinity)
 plot(x_fwd_high, y_fwd_high, 'k-',...
-     x_fwd_low, y_fwd_low, 'k-')
+     x_fwd_low, y_fwd_low, 'k-', salinity, analog, 'k*')
 
 figure % New figure window
 % Plot reverse calibration curve
 % Salinity = f(Analog output)
 plot(y_fwd_high, x_fwd_high, 'k-',...
-     y_fwd_low, x_fwd_low, 'k-');
+     y_fwd_low, x_fwd_low, 'k-', analog, salinity, 'k*');
 
 
