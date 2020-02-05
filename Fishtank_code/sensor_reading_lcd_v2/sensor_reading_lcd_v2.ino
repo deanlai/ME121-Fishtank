@@ -58,10 +58,10 @@ void loop()
     // take a salinity reading
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
 
-    // Convert from analog to salinity percentage using s = (a/c1)^(1/c2)
+    // Convert from analog to salinity percentage using piecewise linear fits
     salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
 
-    // Print to Serial Monitor (for data analysis)
+    // Print to Serial Monitor (for debugging)
     Serial.print(salinityReading);
     Serial.print(" ");
     Serial.print(salinityPercentage, 4);
@@ -70,14 +70,14 @@ void loop()
     // Print to LCD Screen
     lcd.setCursor(1, 0);
     lcd.print("N.A.C.A.H.D.");
-    lcd.setCursor(0, 1); // Print to second row
+    lcd.setCursor(0, 1);                // Print to second row
     lcd.print("Percent salt: ");
-    lcd.print(salinityPercentage, 4); // to 4 decimal places accuracy
-    lcd.setCursor(0, 2);              // Print to third row
+    lcd.print(salinityPercentage, 4);   // to 4 decimal places accuracy
+    lcd.setCursor(0, 2);                // Print to third row
     lcd.print("Analog read: ");
     lcd.print(salinityReading);
-    lcd.print("   ");
-    delay(250); // delay between refresh
+    lcd.print("   ");                   // Spaces to clear trailing digits
+    delay(250);                         // delay between refresh
 }
 
 float takeReading(int powerPin, int readingPin, int numReadings)
