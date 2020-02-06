@@ -103,7 +103,7 @@ void loop()
     lcd.print("Analog read: ");
     lcd.print(salinityReading);
     lcd.print("   ");
-    delay(250); // delay between refresh
+    delay(80); // delay between refresh
     if(salinityPercentage>0.1475) {
       lcd.setCursor(0, 3);
       lcd.print("Salinity Too High"); //model too high salinity with upper section calibration data for est
