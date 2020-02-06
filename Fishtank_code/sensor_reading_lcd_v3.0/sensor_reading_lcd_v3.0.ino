@@ -35,10 +35,18 @@ LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 20, 4); // 20x4 LCD screen, 0x27
     const int b3 = 737;
 
     //button and transistor pins
-    const int pressPin = 12;
+    const int buttonin = 5;
+    const int buttonLED = 6;
     const int transistorPin1 = 10; 
     const int transistorPin2 = 11; 
     const int transistorPin3 = 13; 
+
+    //working vars for button toggling 
+    int state = LOW;
+    int reading;
+    int previous=LOW;
+    long timer = 0;
+    long debounce = 200;
 
    
 
@@ -49,7 +57,8 @@ void setup()
     pinMode(transistorPin1, OUTPUT);
     pinMode(transistorPin2, OUTPUT);
     pinMode(transistorPin3, OUTPUT);
-    pinMode(pressPin, INPUT);
+    pinMode(buttonin, INPUT);
+    pinMode(buttonLED, OUTPUT);
     Serial.begin(9600);
 
     // Setup LCD
@@ -67,8 +76,10 @@ void loop()
     int numReadings = 30;
     int salinityReading = 0;
     float salinityPercentage;
-    int buttonState = 0;
-    int buttonCount = 0;
+    int bstate = buttonRead(buttonin); //check state of toggle
+
+    //button toggle LED
+    digitalWrite(buttonLED, bstate); //you just have to hold down the button for a second because of other delays built into the sketch
 
     // take a salinity reading
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
@@ -144,16 +155,21 @@ float evaluatePolynomial(int x, float c1, float c2) {
     return c1*x + c2;
 }
 
-int buttonToggle(int pressPin){
-  long timer = 0;
-  int debounce = 200;
-  int state = LOW;
-  int reading;
-  int previous = LOW;
-
-  reading = digitalRead(pressPin);
-  if(reading==HIGH && previous==LOW && (millis()-
+int buttonRead(int buttonin){
+  reading = digitalRead(buttonin);
   
+  if(reading==HIGH && previous==LOW && (millis()-timer*1000)>debounce){
+    if (state == LOW){
+      state = HIGH;
+    }
+    else {
+      state = LOW;
+    }
+    timer = millis()/1000;
+  } 
+  
+  previous = reading;
+  return state;
 }
 
   
