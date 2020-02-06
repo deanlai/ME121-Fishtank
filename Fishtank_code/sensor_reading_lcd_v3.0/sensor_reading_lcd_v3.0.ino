@@ -40,6 +40,8 @@ LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 20, 4); // 20x4 LCD screen, 0x27
     const int transistorPin2 = 11; 
     const int transistorPin3 = 13; 
 
+   
+
 void setup()
 {
     // Setup pins and serial comms
@@ -142,10 +144,30 @@ float evaluatePolynomial(int x, float c1, float c2) {
     return c1*x + c2;
 }
 
+int buttonToggle(int pressPin){
+  long timer = 0;
+  int debounce = 200;
+  int state = LOW;
+  int reading;
+  int previous = LOW;
 
-    void relayTest(int transistorPin){
+  reading = digitalRead(pressPin);
+  if(reading==HIGH && previous==LOW && (millis()-
+  
+}
+
+  
+void relayTest(int relaystate){ //turns all transistors on or off based on relaystate
     //turn relays on for testing purposes
-    digitalWrite(transistorPin1, HIGH);
-    digitalWrite(transistorPin2, HIGH);
-    digitalWrite(transistorPin3, HIGH);
+    if (relaystate==1){
+      digitalWrite(transistorPin1, HIGH);
+      digitalWrite(transistorPin2, HIGH);
+      digitalWrite(transistorPin3, HIGH);
+    }
+    else if (relaystate==0){
+      digitalWrite(transistorPin1, LOW);
+      digitalWrite(transistorPin2, LOW);
+      digitalWrite(transistorPin3, LOW);
+      }
+    
 }
