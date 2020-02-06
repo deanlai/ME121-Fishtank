@@ -13,8 +13,8 @@
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 20, 4); // 20x4 LCD screen, 0x27 is the address
 
-// delcare global pins
-const int SALINITY_POWER_PIN = 8;
+    // delcare global pins
+    const int SALINITY_POWER_PIN = 8;
 
     // declare constants from polynomial fits
     // Note on using constants:
@@ -143,9 +143,7 @@ float evaluatePolynomial(int x, float c1, float c2) {
 }
 
 
-    
-
-void relayTest(int transistorPin){
+    void relayTest(int transistorPin){
     //turn relays on for testing purposes
     digitalWrite(transistorPin1, HIGH);
     digitalWrite(transistorPin2, HIGH);
