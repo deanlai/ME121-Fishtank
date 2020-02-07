@@ -3,7 +3,7 @@ const int buttonin=5;
 const int LEDPin = 6;
 int state = LOW;
 int reading;
-int previous=LOW;
+int previous = LOW;
 int buttoncount;
 
 long timer = 0;

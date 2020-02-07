@@ -77,8 +77,8 @@ void loop()
     buttonRead(buttonin); //check state of toggle
 
     // button toggle LED
-    digitalWrite(buttonLED, currentState); // you just have to hold down the button for a second because of other delays built into the sketch
-    relayTest(currentState);
+    digitalWrite(buttonLED, toggled); // you just have to hold down the button for a second because of other delays built into the sketch
+    relayTest(toggled);
     
     // take a salinity reading
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
@@ -154,27 +154,26 @@ float evaluatePolynomial(int x, float c1, float c2) {
     return c1*x + c2;
 }
 
-int buttonRead(int buttonIn){
-  //
+int buttonRead(int buttonin){
   //
   //
   currentState = digitalRead(buttonin);
   
   if(currentState==HIGH && previousState==LOW && (millis()-timer*1000)>debounce){
-    if (state == LOW){
-      currentState = HIGH;
+    if (toggled == LOW){
+      toggled = HIGH;
     }
     else {
-      currentState = LOW;
+      toggled = LOW;
     }
     timer = millis()/1000;
   } 
-  
   previousState = currentState;
 }
 
   
-void relayTest(int relaystate){ //turns all transistors on or off based on relaystate
+void relayTest(int relaystate){ 
+    //turns all transistors on or off based on relaystate
     //turn relays on for testing purposes
     if (relaystate==1){
       digitalWrite(transistorPin1, HIGH);

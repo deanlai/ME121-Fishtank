@@ -1,9 +1,9 @@
 //--------------------------------------------------------
 // Sensor readings program for conversion from analog output to salinity (wt%)
-// Version 1.2
+// Version 2.0
 // 2/3/20
 // The North American Council on Aquatic Housing and Development
-// Reimplments v1.1 with piecewise polynomial fits
+// Reimplments v1.0 with piecewise polynomial fits
 // NOTE: To run this code you must have downloaded the LiquidCrystal_I2C library (and added it to the sketch from the IDE),
 //       which is in Whitman's folder in the main directory
 //--------------------------------------------------------
