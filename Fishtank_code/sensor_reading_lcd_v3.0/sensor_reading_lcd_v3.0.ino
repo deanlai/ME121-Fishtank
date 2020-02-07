@@ -46,7 +46,7 @@ LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 20, 4); // 20x4 LCD screen, 0x27
     int reading;
     int previous=LOW;
     long timer = 0;
-    long debounce = 200;
+    long debounce = 150;
 
    
 
@@ -80,7 +80,8 @@ void loop()
 
     //button toggle LED
     digitalWrite(buttonLED, bstate); //you just have to hold down the button for a second because of other delays built into the sketch
-
+    relayTest(bstate);
+    
     // take a salinity reading
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
 
