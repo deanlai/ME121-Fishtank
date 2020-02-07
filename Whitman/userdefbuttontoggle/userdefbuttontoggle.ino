@@ -6,7 +6,7 @@ int reading;
 int previous = LOW;
 int buttoncount;
 
-long timer = 0;
+unsigned long timer = 0;
 long debounce = 200;
 
 void setup() {
