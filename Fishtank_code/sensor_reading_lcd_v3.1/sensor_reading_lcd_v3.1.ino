@@ -15,7 +15,7 @@ LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 20, 4); // 20x4 LCD screen, 0x27
 
 // delcare global pins
 const int SALINITY_POWER_PIN = 8;
-const int buttonin = 5;
+const int buttonIn = 5;
 const int buttonLED = 6;
 const int transistorPin1 = 10; 
 const int transistorPin2 = 11; 
@@ -28,7 +28,8 @@ int previousState = 0;  // Previous state of button --> 1: pressed, 0: not press
 long timer = 0;         // Used to implement delay
 long debounce = 150;    // Delay checking conditional for time of physical button press
 
-   
+// for timing sensing
+int currentTime = millis();
 
 void setup()
 {
@@ -37,7 +38,7 @@ void setup()
     pinMode(transistorPin1, OUTPUT);
     pinMode(transistorPin2, OUTPUT);
     pinMode(transistorPin3, OUTPUT);
-    pinMode(buttonin, INPUT);
+    pinMode(buttonIn, INPUT_PULLUP);
     pinMode(buttonLED, OUTPUT);
     Serial.begin(9600);
 
@@ -74,23 +75,19 @@ void loop()
     int numReadings = 30;
     int salinityReading = 0;
     float salinityPercentage;
-    buttonRead(buttonin); //check state of toggle
+    buttonRead(buttonIn); //check state of toggle
 
     // button toggle LED
     digitalWrite(buttonLED, toggled); // you just have to hold down the button for a second because of other delays built into the sketch
     relayTest(toggled);
-    
+
     // take a salinity reading
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
-
     // Convert from analog to salinity percentage using s = (a/c1)^(1/c2)
     salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
 
     // Print to Serial Monitor (for data analysis)
-    Serial.print(salinityReading);
-    Serial.print(" ");
-    Serial.print(salinityPercentage, 4);
-    Serial.println();
+    Serial.println(salinityReading);
 
     // Print to LCD Screen
     lcd.setCursor(1, 0);
@@ -154,10 +151,10 @@ float evaluatePolynomial(int x, float c1, float c2) {
     return c1*x + c2;
 }
 
-int buttonRead(int buttonin){
+int buttonRead(int buttonIn){
   //
   //
-  currentState = digitalRead(buttonin);
+  currentState = digitalRead(buttonIn);
   
   if(currentState==HIGH && previousState==LOW && (millis()-timer*1000)>debounce){
     if (toggled == LOW){
