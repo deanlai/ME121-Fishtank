@@ -51,22 +51,6 @@ void loop()
     // declare local pins
     const int SALINITY_READING_PIN = A0;
 
-    // declare setpoint and sigma
-    // Note: setpoint in wt%
-    //       sigma given relative to salinity percentage
-    float setpoint = 0;
-    float sigma = 0;
-
-    // setup variables
-    int numReadings = 30;     // number of readings per salinity reading
-    int salinityReading;      // current analog reading from salinity sensor
-    float salinityPercentage; // current salinity percentage
-    int deadtime;             // timer used to allow water to mix
-
-    // compute UCL & LCL
-    float UCL = setpoint + 3 * sigma;
-    float LCL = setpoint - 3 * sigma;
-
     // declare constants and breakpoints for polynomial fit
     // Note on using constants:
     // c   --> prefix to show variable is a constant
@@ -82,6 +66,22 @@ void loop()
     const int b1 = 76;
     const int b2 = 626;
     const int b3 = 737;
+
+    // declare setpoint(wt %) and sigma (a)
+    float setpoint = 0;
+    float sigma_analog = 0;
+    // convert sigma_analog to wt %
+    float sigma = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, sigma_analog);
+
+    // setup variables
+    int numReadings = 30;     // number of readings per salinity reading
+    int salinityReading;      // current analog reading from salinity sensor
+    float salinityPercentage; // current salinity percentage
+    int deadtime;             // timer used to allow water to mix
+
+    // compute UCL & LCL
+    float UCL = setpoint + 3 * sigma;
+    float LCL = setpoint - 3 * sigma;
 
     // take a salinity reading
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
