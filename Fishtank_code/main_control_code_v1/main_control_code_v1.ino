@@ -1,9 +1,11 @@
 //--------------------------------------------------------
-// Sensor readings program for conversion from analog output to salinity (wt%)
-// Version 3.0
-// 2/3/20
+// Main Control Code
+// Version 1.0
+// 2/9/20
 // The North American Council on Aquatic Housing and Development
-// Reimplments v2.0 with code to toggle relays for testing and calibration
+// Extends sensor_reading code base to actuate solenoids
+// Usage: This program is intended to running live when our system control is being tested.
+//        For debugging and testing use testing_code_v#.
 // NOTE: To run this code you must have downloaded the LiquidCrystal_I2C library (and added it to the sketch from the IDE),
 //       which is in Whitman's folder in the main directory
 //--------------------------------------------------------
@@ -15,31 +17,15 @@ LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 20, 4); // 20x4 LCD screen, 0x27
 
 // delcare global pins
 const int SALINITY_POWER_PIN = 8;
-const int buttonin = 5;
-const int buttonLED = 6;
-const int transistorPin1 = 10; 
-const int transistorPin2 = 11; 
-const int transistorPin3 = 13; 
-
-// working vars for button toggling 
-int toggled = 0;        // State of machine that button controls: 0: off, 1: on
-int currentState;       // Current state of button --> 1: pressed, 0: not pressed
-int previousState = 0;  // Previous state of button --> 1: pressed, 0: not pressed
-long timer = 0;         // Used to implement delay
-long debounce = 150;    // Delay checking conditional for time of physical button press
-
-   
+const int saltyPin = 10; 
+const int freshPin = 11; 
 
 void setup()
 {
     // Setup pins and serial comms
     pinMode(SALINITY_POWER_PIN, OUTPUT);
-    pinMode(transistorPin1, OUTPUT);
-    pinMode(transistorPin2, OUTPUT);
-    pinMode(transistorPin3, OUTPUT);
-    pinMode(buttonin, INPUT);
-    pinMode(buttonLED, OUTPUT);
-    Serial.begin(9600);
+    pinMode(saltyPin, OUTPUT);
+    pinMode(freshPin, OUTPUT);
 
     // Setup LCD
     lcd.init();      // initiate LCD
@@ -50,47 +36,51 @@ void loop()
 {
     // declare local pins
     const int SALINITY_READING_PIN = A0;
-    const int relaytest;
 
-    // declare constants from polynomial fits
+    // declare setpoint and sigma
+    // Note: setpoint in wt%
+    //       sigma given relative to salinity percentage
+    float setpoint = 0;
+    float sigma = 0;
+
+    // setup variables
+    int numReadings = 30;     // number of readings per salinity reading
+    int salinityReading;      // current analog reading from salinity sensor
+    float salinityPercentage; // current salinity percentage
+    int deadtime;             // timer used to allow water to mix
+
+    // compute UCL & LCL
+    float UCL = setpoint + 3*sigma;
+    float LCL = setpoint - 3*sigma;
+
+    // declare constants and breakpoints for polynomial fit
     // Note on using constants:
     // c   --> prefix to show variable is a constant
     // h,l --> used for high/low salinity line
     // 1,2 --> first or second constant in eq. y = c1*x + c2
+    // b1 --> low point determined from DI water average reading
+    // b2 --> mid point at 0.05 wt% to transition from one fit line to the next
+    // b3 --> high point determined from 0.15 wt% water reading
     const float cl1 = 9.0881533e-05;
     const float cl2 = -6.9069865e-03;
     const float ch1 = 8.5798207e-04;
     const float ch2 = -4.8485778e-01;
-
-    // breakpoints for conditionals to determine which fit line to used
-    // b1 --> low point determined from DI water average reading
-    // b2 --> mid point at 0.05 wt% to transition from one fit line to the next
-    // b3 --> high point determined from 0.15 wt% water reading
     const int b1 = 76;
     const int b2 = 626;
     const int b3 = 737;
 
-    // setup variables
-    int numReadings = 30;
-    int salinityReading = 0;
-    float salinityPercentage;
-    buttonRead(buttonin); //check state of toggle
-
-    // button toggle LED
-    digitalWrite(buttonLED, currentState); // you just have to hold down the button for a second because of other delays built into the sketch
-    relayTest(currentState);
-    
     // take a salinity reading
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
-
     // Convert from analog to salinity percentage using s = (a/c1)^(1/c2)
     salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
 
-    // Print to Serial Monitor (for data analysis)
-    Serial.print(salinityReading);
-    Serial.print(" ");
-    Serial.print(salinityPercentage, 4);
-    Serial.println();
+    // check if salinity reading is within control limits
+    // conditional checks if salinity reading is above UCL OR below LCL 
+    // AND if enough deadtime has passed to perform another adjustment
+    if ((salinityPercentage > UCL || salinityPercentage < LCL) && millis() > deadtime + 12000) {
+        adjustSalinity(salinityPercentage, setpoint);       // Adjust salinity using solenoids
+        deadtime = millis();    // Set deadtime timer to current millis() value
+    }
 
     // Print to LCD Screen
     lcd.setCursor(1, 0);
@@ -110,16 +100,14 @@ void loop()
     
 }
 
-float takeReading(int powerPin, int readingPin, int numReadings)
-{
+float takeReading(int powerPin, int readingPin, int numReadings) {
     // input: powerPin (digital out), readingPin (analog in), numReadings (>0)
     // output: average of numReadings readings
 
     float sum = 0.0;
     digitalWrite(powerPin, 1); // Turn sensor on
     delay(100);                // Allow power to settle
-    for (int i = 0; i < numReadings; i++)
-    { // Take readings and sum
+    for (int i = 0; i < numReadings; i++) { // Take readings and sum
         sum += analogRead(readingPin);
         delay(10);
     }
@@ -154,37 +142,40 @@ float evaluatePolynomial(int x, float c1, float c2) {
     return c1*x + c2;
 }
 
-int buttonRead(int buttonIn){
-  //
-  //
-  //
-  currentState = digitalRead(buttonin);
-  
-  if(currentState==HIGH && previousState==LOW && (millis()-timer*1000)>debounce){
-    if (state == LOW){
-      currentState = HIGH;
+void adjustSalinity(float currentSalinity, float setpoint) {
+    // input: current salinity and salinity setpoint
+    // output: none
+    // calls openSolenoid() to adjust salinity of system to a target salinity
+
+    // Set target salinity to 80% of the difference between current salinity and setpoint
+    int targetSalinity = currentSalinity - (currentSalinity - setpoint)*0.8;
+
+    if (targetSalinity > currentSalinity){ 
+        openSolenoid(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water 
     }
-    else {
-      currentState = LOW;
+    else{
+        openSolenoid(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
     }
-    timer = millis()/1000;
-  } 
-  
-  previousState = currentState;
 }
 
-  
-void relayTest(int relaystate){ //turns all transistors on or off based on relaystate
-    //turn relays on for testing purposes
-    if (relaystate==1){
-      digitalWrite(transistorPin1, HIGH);
-      digitalWrite(transistorPin2, HIGH);
-      digitalWrite(transistorPin3, HIGH);
-    }
-    else if (relaystate==0){
-      digitalWrite(transistorPin1, LOW);
-      digitalWrite(transistorPin2, LOW);
-      digitalWrite(transistorPin3, LOW);
-      }
-    
+float openSolenoid(float targetSalinity, float currentSalinity, int addedSalinity, int pin) {
+    // input: targetSalinity (of system),
+    //        currentSalinity (of system),
+    //        addedSalinity (% salinity of fluid to be added),
+    //        pin (of solenoid used to adjust system salinity)
+    // opens solenoid at <pin> for appropriate time to reach targetSalinity
+
+    const float overflowFraction = 1;   // Fraction of added water that overflows before mixing
+    const float totalMass = 0;          // Total mass of water in a filled system
+    const float flowRate = 0;           // Mass flow rate of solenoids
+    // calculate mass of water to add
+    massToAdd = totalMass * 
+                (currentSalinity - targetSalinity)/
+                (currentSalinity - addedSalinity)*
+                (1 / 1 - overflowFraction);
+    // calculate time needed to add appropriate quantity of mass and open solenoid
+    time = massToAdd / flowRate;
+    digitalWrite(pin, 1);
+    delay(time);
+    digitalWrite(pin, 0);
 }
