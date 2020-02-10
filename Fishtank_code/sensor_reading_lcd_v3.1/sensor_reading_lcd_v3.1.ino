@@ -17,8 +17,8 @@ LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 20, 4); // 20x4 LCD screen, 0x27
 const int SALINITY_POWER_PIN = 8;
 const int buttonIn = 5;
 const int buttonLED = 6;
-const int transistorPin1 = 10; 
-const int transistorPin2 = 11; 
+const int saltyPin = 10; 
+const int freshPin = 11; 
 const int transistorPin3 = 13; 
 
 // working vars for button toggling 
@@ -53,6 +53,20 @@ void loop()
     const int SALINITY_READING_PIN = A0;
     const int relaytest;
 
+    // declare setpoint and sigma
+    // Note: setpoint in wt%
+    //       sigma given relative to analog reading values
+    float setpoint = 0.09;
+    float sigma = 2.00;
+
+    // delcare variables for deadtime timer
+    int deadtime;
+
+    //compute setpoint(analog), LCL, UCL
+    setpointAnalog = calculateSetpointAnalog(setpoint);
+    UCL = setpointAnalog + 3*sigma;
+    LCL = setpointAnalog - 3*sigma;
+
     // declare constants from polynomial fits
     // Note on using constants:
     // c   --> prefix to show variable is a constant
@@ -73,7 +87,7 @@ void loop()
 
     // setup variables
     int numReadings = 30;
-    int salinityReading = 0;
+    int salinityReading;
     float salinityPercentage;
     buttonRead(buttonIn); //check state of toggle
 
@@ -88,6 +102,12 @@ void loop()
 
     // Print to Serial Monitor (for data analysis)
     Serial.println(salinityReading);
+
+    // check if salinity reading is within control limits
+    if ((salinityReading > UCL || salinityReading < LCL) && millis() > deadtime + 12000){
+      adjustSalinity();       // Adjust salinity using solenoids
+      deadtime = millis();    // Set deadtime timer to current millis() value
+    }
 
     // Print to LCD Screen
     lcd.setCursor(1, 0);
@@ -173,14 +193,42 @@ void relayTest(int relaystate){
     //turns all transistors on or off based on relaystate
     //turn relays on for testing purposes
     if (relaystate==1){
-      digitalWrite(transistorPin1, HIGH);
-      digitalWrite(transistorPin2, HIGH);
+      digitalWrite(saltyPin), HIGH);
+      digitalWrite(freshPin, HIGH);
       digitalWrite(transistorPin3, HIGH);
     }
     else if (relaystate==0){
-      digitalWrite(transistorPin1, LOW);
-      digitalWrite(transistorPin2, LOW);
+      digitalWrite(saltyPin), LOW);
+      digitalWrite(freshPin, LOW);
       digitalWrite(transistorPin3, LOW);
       }
     
+}
+
+int calculateSetpointAnalog() {
+  return setpoint 
+}
+
+void adjustSalinity(salinityPercentage, setpoint){
+  int targetSalinity = salinityPercentage - (salinityPercentage - setpoint)*0.8;
+  if (targetSalinity < salinityPercentage){
+    openSolenoid(targetSalinity, salinityPercentage, 1, saltyPin);
+  }
+  else{
+    openSolenoid(targetSalinity, salinityPercentage, 0, freshPin);
+  }
+}
+
+float openSolenoid(targetSalinity, currentSalinity, addedSalinity, pin) {
+  // Returns time in ms to open solenoid
+  const float overflowFraction = 1;
+  const float totalMass = 0;
+  const float flowRate = 0;
+  massToAdd = totalMass * (currentSalinity - targetSalinity)/
+                          (currentSalinity - addedSalinity)*
+                          (1 / 1 - overflowFraction);
+  time = massToAdd / flowRate;
+  digitalWrite(pin, 1);
+  delay(time);
+  digitalWrite(pin, 0);
 }
