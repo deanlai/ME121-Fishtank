@@ -1,9 +1,9 @@
 //--------------------------------------------------------
 // Sensor readings program for conversion from analog output to salinity (wt%)
-// Version 3.1
+// Version 1.2
 // 2/3/20
 // The North American Council on Aquatic Housing and Development
-// Reimplments v2.0 with code to toggle relays for testing and calibration
+// Reimplments v1.1 with piecewise polynomial fits
 // NOTE: To run this code you must have downloaded the LiquidCrystal_I2C library (and added it to the sketch from the IDE),
 //       which is in Whitman's folder in the main directory
 //--------------------------------------------------------
@@ -13,20 +13,40 @@
 #include <LiquidCrystal_I2C.h>
 LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 20, 4); // 20x4 LCD screen, 0x27 is the address
 
-// delcare global pins
-const int SALINITY_POWER_PIN = 8;
-const int buttonin = 5;
-const int buttonLED = 6;
-const int transistorPin1 = 10; 
-const int transistorPin2 = 11; 
-const int transistorPin3 = 13; 
+    // delcare global pins
+    const int SALINITY_POWER_PIN = 8;
 
-// working vars for button toggling 
-int toggled = 0;        // State of machine that button controls: 0: off, 1: on
-int currentState;       // Current state of button --> 1: pressed, 0: not pressed
-int previousState = 0;  // Previous state of button --> 1: pressed, 0: not pressed
-long timer = 0;         // Used to implement delay
-long debounce = 150;    // Delay checking conditional for time of physical button press
+    // declare constants from polynomial fits
+    // Note on using constants:
+    // c   --> prefix to show variable is a constant
+    // h,l --> used for high/low salinity line
+    // 1,2 --> first or second constant in eq. y = c1*x + c2
+    const float cl1 = 9.0881533e-05;
+    const float cl2 = -6.9069865e-03;
+    const float ch1 = 8.5798207e-04;
+    const float ch2 = -4.8485778e-01;
+
+    // breakpoints for conditionals to determine which fit line to used
+    // b1 --> low point determined from DI water average reading
+    // b2 --> mid point at 0.05 wt% to transition from one fit line to the next
+    // b3 --> high point determined from 0.15 wt% water reading
+    const int b1 = 76;
+    const int b2 = 626;
+    const int b3 = 737;
+
+    //button and transistor pins
+    const int buttonin = 5;
+    const int buttonLED = 6;
+    const int transistorPin1 = 10; 
+    const int transistorPin2 = 11; 
+    const int transistorPin3 = 13; 
+
+    //working vars for button toggling 
+    int state = LOW;
+    int reading;
+    int previous=LOW;
+    long timer = 0;
+    long debounce = 150;
 
    
 
@@ -50,35 +70,17 @@ void loop()
 {
     // declare local pins
     const int SALINITY_READING_PIN = A0;
-    const int relaytest;
 
-    // declare constants from polynomial fits
-    // Note on using constants:
-    // c   --> prefix to show variable is a constant
-    // h,l --> used for high/low salinity line
-    // 1,2 --> first or second constant in eq. y = c1*x + c2
-    const float cl1 = 9.0881533e-05;
-    const float cl2 = -6.9069865e-03;
-    const float ch1 = 8.5798207e-04;
-    const float ch2 = -4.8485778e-01;
-
-    // breakpoints for conditionals to determine which fit line to used
-    // b1 --> low point determined from DI water average reading
-    // b2 --> mid point at 0.05 wt% to transition from one fit line to the next
-    // b3 --> high point determined from 0.15 wt% water reading
-    const int b1 = 76;
-    const int b2 = 626;
-    const int b3 = 737;
-
+  
     // setup variables
     int numReadings = 30;
     int salinityReading = 0;
     float salinityPercentage;
-    buttonRead(buttonin); //check state of toggle
+    int bstate = buttonRead(buttonin); //check state of toggle
 
-    // button toggle LED
-    digitalWrite(buttonLED, toggled); // you just have to hold down the button for a second because of other delays built into the sketch
-    relayTest(toggled);
+    //button toggle LEDs
+    digitalWrite(buttonLED, bstate); //light to test button toggle. you just have to hold down the button for a second because of other delays built into the sketch
+    relayTest(bstate); //controls transistor pins based on button press toggle function 
     
     // take a salinity reading
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
@@ -101,8 +103,8 @@ void loop()
     lcd.setCursor(0, 2);              // Print to third row
     lcd.print("Analog read: ");
     lcd.print(salinityReading);
-    lcd.print("   ");                 // added empty characters to clear trailing digits
-    delay(80);                        // delay between refresh
+    lcd.print("   ");
+    delay(80); // delay between refresh
     if(salinityPercentage>0.1475) {
       lcd.setCursor(0, 3);
       lcd.print("Salinity Too High"); //model too high salinity with upper section calibration data for est
@@ -155,25 +157,24 @@ float evaluatePolynomial(int x, float c1, float c2) {
 }
 
 int buttonRead(int buttonin){
-  //
-  //
-  currentState = digitalRead(buttonin);
+  reading = digitalRead(buttonin);
   
-  if(currentState==HIGH && previousState==LOW && (millis()-timer*1000)>debounce){
-    if (toggled == LOW){
-      toggled = HIGH;
+  if(reading==HIGH && previous==LOW && (millis()-timer*1000)>debounce){
+    if (state == LOW){
+      state = HIGH;
     }
     else {
-      toggled = LOW;
+      state = LOW;
     }
     timer = millis()/1000;
   } 
-  previousState = currentState;
+  
+  previous = reading;
+  return state;
 }
 
   
-void relayTest(int relaystate){ 
-    //turns all transistors on or off based on relaystate
+void relayTest(int relaystate){ //turns all transistors on or off based on relaystate
     //turn relays on for testing purposes
     if (relaystate==1){
       digitalWrite(transistorPin1, HIGH);
