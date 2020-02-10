@@ -59,13 +59,13 @@ void loop()
     // b1 --> low point determined from DI water average reading
     // b2 --> mid point at 0.05 wt% to transition from one fit line to the next
     // b3 --> high point determined from 0.15 wt% water reading
-    const float cl1 = 9.0881533e-05;
-    const float cl2 = -6.9069865e-03;
-    const float ch1 = 8.5798207e-04;
-    const float ch2 = -4.8485778e-01;
-    const int b1 = 76;
-    const int b2 = 626;
-    const int b3 = 737;
+    const float cl1 = 9.5754848e-05;
+    const float cl2 = -7.7561327e-03;
+    const float ch1 = 8.5607131e-04;
+    const float ch2 = -4.6129742e-01;
+    const int b1 = 81;
+    const int b2 = 603;
+    const int b3 = 708;
 
     // declare setpoint(wt %) and sigma (a)
     float setpoint = 0;
@@ -196,7 +196,7 @@ float openSolenoid(float targetSalinity, float currentSalinity, int addedSalinit
     //        pin (of solenoid used to adjust system salinity)
     // opens solenoid at <pin> for appropriate time to reach targetSalinity
 
-    const float overflowFraction = 1; // Fraction of added water that overflows before mixing
+    const float overflowFraction = .2; // Fraction of added water that overflows before mixing
     const float totalMass = 0;        // Total mass of water in a filled system
     const float flowRate = 0;         // Mass flow rate of solenoids
     // calculate mass of water to add
