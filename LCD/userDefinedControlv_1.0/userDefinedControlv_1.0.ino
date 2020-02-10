@@ -16,7 +16,19 @@ void loop() {
 
 void lcdSetup(){
 
+  int cpos = 17;
+  int npos = 0;
   lcd.init();
   lcd.backlight();
-  
+  lcd.setCursor(16,1);
+  lcd.print("N.A.C.A.H.D.");
+  String nacahd = "N.A.C.A.H.D.";
+  for (int poscount=0; poscount<5; poscount++){
+    lcd.scrollDisplayLeft();
+    lcd.setCursor(cpos, 1);
+    lcd.print(nacahd.charAt(npos));
+    npos += 1;
+    cpos -= 1;
+    delay(100);
+  }
 }
