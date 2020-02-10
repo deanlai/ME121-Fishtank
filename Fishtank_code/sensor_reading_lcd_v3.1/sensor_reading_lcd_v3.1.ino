@@ -63,7 +63,7 @@ void loop()
     int deadtime;
 
     //compute setpoint(analog), LCL, UCL
-    setpointAnalog = calculateSetpointAnalog(setpoint);
+    
     UCL = setpointAnalog + 3*sigma;
     LCL = setpointAnalog - 3*sigma;
 
@@ -172,8 +172,8 @@ float evaluatePolynomial(int x, float c1, float c2) {
 }
 
 int buttonRead(int buttonIn){
-  //
-  //
+  // input: button Pin
+  // Reads button state and swaps state of toggled variable
   currentState = digitalRead(buttonIn);
   
   if(currentState==HIGH && previousState==LOW && (millis()-timer*1000)>debounce){
@@ -220,7 +220,6 @@ void adjustSalinity(salinityPercentage, setpoint){
 }
 
 float openSolenoid(targetSalinity, currentSalinity, addedSalinity, pin) {
-  // Returns time in ms to open solenoid
   const float overflowFraction = 1;
   const float totalMass = 0;
   const float flowRate = 0;
