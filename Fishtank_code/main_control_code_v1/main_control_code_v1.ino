@@ -77,7 +77,7 @@ void loop()
     // check if salinity reading is within control limits
     // conditional checks if salinity reading is above UCL OR below LCL 
     // AND if enough deadtime has passed to perform another adjustment
-    if ((salinityPercentage > UCL || salinityPercentage < LCL) && millis() > deadtime + 12000){
+    if ((salinityPercentage > UCL || salinityPercentage < LCL) && millis() > deadtime + 12000) {
         adjustSalinity(salinityPercentage, setpoint);       // Adjust salinity using solenoids
         deadtime = millis();    // Set deadtime timer to current millis() value
     }

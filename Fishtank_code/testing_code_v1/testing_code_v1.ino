@@ -91,8 +91,7 @@ void loop()
     // check if salinity reading is within control limits
     // conditional checks if salinity reading is above UCL OR below LCL
     // AND if enough deadtime has passed to perform another adjustment
-    if ((salinityPercentage > UCL || salinityPercentage < LCL) && millis() > deadtime + 12000)
-    {
+    if ((salinityPercentage > UCL || salinityPercentage < LCL) && millis() > deadtime + 12000) {
         adjustSalinity(salinityPercentage, setpoint); // Adjust salinity using solenoids
         deadtime = millis();                          // Set deadtime timer to current millis() value
     }
@@ -108,8 +107,7 @@ void loop()
     lcd.print(salinityReading);
     lcd.print("   "); // added empty characters to clear trailing digits
     delay(80);        // delay between refresh
-    if (salinityPercentage > 0.1475)
-    {
+    if (salinityPercentage > 0.1475) {
         lcd.setCursor(0, 3);
         lcd.print("Salinity Too High"); //model too high salinity with upper section calibration data for est
     }
@@ -153,20 +151,16 @@ float findSalinityPercentage(float c1, float c2, float c3, float c4, int b1, int
     // output: corresponding salinity in wt%
 
     // check breakpoints to determine function region
-    if (reading < b1)
-    { // reading < DI water breakpoint
+    if (reading < b1) {      // reading < DI water breakpoint
         return 0;
     }
-    else if (reading < b2)
-    { // reading < 0.05 wt% breakpoint
+    else if (reading < b2) { // reading < 0.05 wt% breakpoint
         return evaluatePolynomial(reading, c1, c2);
     }
-    else if (reading < b3)
-    { // reading < 0.15 wt% breakpoint
+    else if (reading < b3) { // reading < 0.15 wt% breakpoint
         return evaluatePolynomial(reading, c3, c4);
     }
-    else
-    {                                          // reading > 0.15 wt% breakpoint
+    else {                   // reading > 0.15 wt% breakpoint
         return evaluatePolynomial(b3, c3, c4); // return value of polynomial at b3
     }
 }
@@ -186,12 +180,10 @@ void adjustSalinity(float currentSalinity, float setpoint)
     // Set target salinity to 80% of the difference between current salinity and setpoint
     int targetSalinity = currentSalinity - (currentSalinity - setpoint) * 0.8;
 
-    if (targetSalinity > currentSalinity)
-    {
+    if (targetSalinity > currentSalinity) {
         openSolenoid(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water
     }
-    else
-    {
+    else {
         openSolenoid(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
     }
 }
@@ -227,8 +219,7 @@ int buttonRead(int buttonIn) {
 
     if (currentState == 1 &&                    // checks that button is pressed and previously was not
         previousState == 0 &&                   // and that a sort delay has passed between state changes
-        (millis() - timer * 1000) > debounce)
-    {
+        (millis() - timer * 1000) > debounce) {
         if (toggled == 0) {         // swaps toggled state
             toggled = 1;
         } 
@@ -243,13 +234,11 @@ int buttonRead(int buttonIn) {
 void relayTest(int toggled)
 {
     // turns all transistors on or off based on toggled state
-    if (toggled == 1)
-    {
+    if (toggled == 1) {
       digitalWrite(saltyPin), 1);
       digitalWrite(freshPin, 1);
     }
-    else if (toggled == 0)
-    {
+    else if (toggled == 0) {
       digitalWrite(saltyPin), 0);
       digitalWrite(freshPin, 0);
     }
