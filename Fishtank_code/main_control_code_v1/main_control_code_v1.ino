@@ -79,8 +79,8 @@ void loop()
     // check if salinity reading is within control limits
     // conditional checks if salinity reading is above UCL OR below LCL 
     // AND if enough deadtime has passed to perform another adjustment
-    if ((salinityReading > UCL || salinityReading < LCL) && millis() > deadtime + 12000){
-        adjustSalinity();       // Adjust salinity using solenoids
+    if ((salinityPercentage > UCL || salinityPercentage < LCL) && millis() > deadtime + 12000){
+        adjustSalinity(salinityPercentage, setpoint);       // Adjust salinity using solenoids
         deadtime = millis();    // Set deadtime timer to current millis() value
     }
 
@@ -145,23 +145,23 @@ float evaluatePolynomial(int x, float c1, float c2) {
     return c1*x + c2;
 }
 
-void adjustSalinity(salinityPercentage, setpoint) {
-    // input: salinityPercentage (current) and target salinity setpoint
+void adjustSalinity(float currentSalinity, float setpoint) {
+    // input: current salinity and salinity setpoint
     // output: none
-    // calls openSolenoid() to adjust salinity of system based on current % and setpoint
+    // calls openSolenoid() to adjust salinity of system to a target salinity
 
     // Set target salinity to 80% of the difference between current salinity and setpoint
-    int targetSalinity = salinityPercentage - (salinityPercentage - setpoint)*0.8;
+    int targetSalinity = currentSalinity - (currentSalinity - setpoint)*0.8;
 
-    if (targetSalinity > salinityPercentage){ 
-        openSolenoid(targetSalinity, salinityPercentage, 1, saltyPin);
+    if (targetSalinity > currentSalinity){ 
+        openSolenoid(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water 
     }
     else{
-        openSolenoid(targetSalinity, salinityPercentage, 0, freshPin);
+        openSolenoid(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
     }
 }
 
-float openSolenoid(targetSalinity, currentSalinity, addedSalinity, pin) {
+float openSolenoid(float targetSalinity, float currentSalinity, int addedSalinity, int pin) {
     // input: targetSalinity (of system),
     //        currentSalinity (of system),
     //        addedSalinity (% salinity of fluid to be added),
