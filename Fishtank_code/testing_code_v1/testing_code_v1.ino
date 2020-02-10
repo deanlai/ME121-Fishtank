@@ -77,7 +77,7 @@ void loop()
     int numReadings = 30;     // number of readings per salinity reading
     int salinityReading;      // current analog reading from salinity sensor
     float salinityPercentage; // current salinity percentage
-    int deadtime;             // timer used to allow water to mix
+    int deadtime = -12000;             // timer used to allow water to mix
 
     // compute UCL & LCL
     float UCL = setpoint + 3 * sigma;
@@ -88,11 +88,9 @@ void loop()
     // Convert from analog to salinity percentage using s = (a/c1)^(1/c2)
     salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
 
-    // check if salinity reading is within control limits
-    // conditional checks if salinity reading is above UCL OR below LCL
-    // AND if enough deadtime has passed to perform another adjustment
-    if ((salinityPercentage > UCL || salinityPercentage < LCL) && millis() > deadtime + 12000) {
-        adjustSalinity(salinityPercentage, setpoint); // Adjust salinity using solenoids
+    // check if enough deadtime has passed and perform an adjustment if check suceeds
+    if (millis() > deadtime + 12000) {
+        adjustSalinity(salinityPercentage, setpoint, UCL, LCL); // Adjust salinity using solenoids
         deadtime = millis();                          // Set deadtime timer to current millis() value
     }
 
@@ -171,20 +169,22 @@ float evaluatePolynomial(int x, float c1, float c2)
     return c1 * x + c2;
 }
 
-void adjustSalinity(float currentSalinity, float setpoint)
+void adjustSalinity(float currentSalinity, float setpoint, float UCL, float LCL)
 {
     // input: current salinity and salinity setpoint
     // output: none
     // calls openSolenoid() to adjust salinity of system to a target salinity
 
-    // Set target salinity to 80% of the difference between current salinity and setpoint
-    int targetSalinity = currentSalinity - (currentSalinity - setpoint) * 0.8;
-
-    if (targetSalinity > currentSalinity) {
-        openSolenoid(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water
-    }
-    else {
-        openSolenoid(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
+    // check if salinity percentage is outside of control limits
+    if (salinityPercentage > UCL || salinityPercentage < LCL) {
+        // Set target salinity to 80% of the difference between current salinity and setpoint
+        int targetSalinity = currentSalinity - (currentSalinity - setpoint) * 0.8;
+        if (targetSalinity > currentSalinity) {
+            openSolenoid(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water
+        }
+        else {
+            openSolenoid(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
+        }
     }
 }
 
