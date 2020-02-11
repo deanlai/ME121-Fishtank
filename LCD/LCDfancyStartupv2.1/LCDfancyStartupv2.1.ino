@@ -15,7 +15,12 @@ void loop() {
   lcdFancySetup(); // ;)
 }
 
-void lcdsimple
+void lcdSimpleSetup() {
+  
+  lcd.init();
+  lcd.backlight();
+  
+}
 void lcdFancySetup() { //setup lcd with fancy display
   int ppos = 4; //counter position for cursor to print periods
   int cpos = 4; //counter pos for cursor to print string
