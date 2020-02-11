@@ -1,6 +1,6 @@
 //--------------------------------------------------------
 // Testing Code
-// Version 1.0
+// Version 2.0
 // 2/9/20
 // The North American Council on Aquatic Housing and Development
 // Extends sensor_reading code base to actuate solenoids
