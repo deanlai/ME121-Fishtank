@@ -72,8 +72,17 @@ void lcdUpdate () {
   float tLCL, tSP, tUCL; 
 
   //Current values 
+  int heater; //placeholder so that heaterState string control will compile
   float saltNow, tempNow; 
-  int heaterState;
+  String heaterState; // "on" or "off"
+
+  //if/else block to modify heaterState based on whether the heater is on or not, arbitrary var names used here
+  if (heater == 1) { 
+    heaterState = "ON";
+  }
+  else {
+    heaterState = "OFF";
+  }
   
   
   
