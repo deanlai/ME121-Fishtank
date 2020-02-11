@@ -29,7 +29,7 @@ long timer = 0;        // Used to implement delay
 long debounce = 150;   // Delay checking conditional for time of physical button press
 
 // for timing sensing
-int currentTime = millis();
+unsigned long currentTime = millis(); //
 
 // control limits
 float sLCL, sSP, sUCL; //salinity limits, Lower Control Limit, Set point, and Upper cont lim
@@ -315,14 +315,14 @@ void lcdUpdate() {
   //S, T, and H on the bottom are the current values, H is whether the heater is on
 
   //Salinity Parameters
-  //float sLCL, sSP, sUCL;
+  float sLCL, sSP, sUCL;
 
   //Temp parameters
-  //float tLCL, tSP, tUCL;
+  float tLCL, tSP, tUCL;
 
   //Current values
   int heater; //placeholder so that heaterState string control will compile
-  //float saltNow, tempNow;
+  float saltNow, tempNow;
   String heaterState; // "on" or "off"
 
   //if/else block to modify heaterState based on whether the heater is on or not, arbitrary var names used here
