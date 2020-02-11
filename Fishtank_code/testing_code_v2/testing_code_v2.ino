@@ -315,14 +315,14 @@ void lcdUpdate() {
   //S, T, and H on the bottom are the current values, H is whether the heater is on
 
   //Salinity Parameters
-  float sLCL, sSP, sUCL;
+  //float sLCL, sSP, sUCL;
 
   //Temp parameters
-  float tLCL, tSP, tUCL;
+  //float tLCL, tSP, tUCL;
 
   //Current values
   int heater; //placeholder so that heaterState string control will compile
-  float saltNow, tempNow;
+  //float saltNow, tempNow;
   String heaterState; // "on" or "off"
 
   //if/else block to modify heaterState based on whether the heater is on or not, arbitrary var names used here
