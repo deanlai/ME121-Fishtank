@@ -92,7 +92,7 @@ void lcdUpdate () {
   
   //second row, Salinity
   lcd.setCursor(0, 1);
-  lcd.print("S  ");
+  lcd.print("S: ");
   lcd.setCursor(3, 1);
   lcd.print(sLCL); 
   lcd.setCursor(9, 1);
