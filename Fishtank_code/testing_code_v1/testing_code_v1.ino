@@ -94,6 +94,12 @@ void loop()
         deadtime = millis();                          // Set deadtime timer to current millis() value
     }
 
+    // Toggle Solenoid on/off cycle 10 times to calibrate flow rate
+    for (int i=0, i<10, i++) {
+        openSolenoid(freshPin, 1000);
+        delay(1000);
+    }
+
     // Print to LCD Screen
     lcd.setCursor(1, 0);
     lcd.print("N.A.C.A.H.D.");
@@ -180,15 +186,15 @@ void adjustSalinity(float currentSalinity, float setpoint, float UCL, float LCL)
         // Set target salinity to 80% of the difference between current salinity and setpoint
         int targetSalinity = currentSalinity - (currentSalinity - setpoint) * 0.8;
         if (targetSalinity > currentSalinity) {
-            openSolenoid(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water
+            addWater(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water
         }
         else {
-            openSolenoid(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
+            addWater(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
         }
     }
 }
 
-float openSolenoid(float targetSalinity, float currentSalinity, int addedSalinity, int pin)
+void addWater(float targetSalinity, float currentSalinity, int addedSalinity, int pin)
 {
     // input: targetSalinity (of system),
     //        currentSalinity (of system),
@@ -197,21 +203,26 @@ float openSolenoid(float targetSalinity, float currentSalinity, int addedSalinit
     // opens solenoid at <pin> for appropriate time to reach targetSalinity
 
     const float overflowFraction = .2; // Fraction of added water that overflows before mixing
-    const float totalMass = 0;        // Total mass of water in a filled system
-    const float flowRate = 0;         // Mass flow rate of solenoids
+    const float totalMass = .25;         // Total mass of water in a filled system (kg)
+    const float flowRate = .01;          // Mass flow rate of solenoids (kg/s)
     // calculate mass of water to add
     massToAdd = totalMass *
                 (currentSalinity - targetSalinity) /
                 (currentSalinity - addedSalinity) *
                 (1 / 1 - overflowFraction);
     // calculate time needed to add appropriate quantity of mass and open solenoid
-    time = massToAdd / flowRate;
+    float time = massToAdd / flowRate * 1000; // x1000 to convert to ms
+    openSolenoid(pin, time)
+}
+
+void toggleSolenoid(int pin, int time) {
+    // Opens solenoid at <pin> for <time> in ms.
     digitalWrite(pin, 1);
     delay(time);
     digitalWrite(pin, 0);
 }
 
-int buttonRead(int buttonIn) {
+void buttonRead(int buttonIn) {
     // input: button Pin
     // Reads button state and swaps state of toggled variable if button is pressed for sufficient time
 

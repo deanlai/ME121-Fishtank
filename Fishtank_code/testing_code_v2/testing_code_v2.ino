@@ -177,24 +177,29 @@ float evaluatePolynomial(int x, float c1, float c2)
   return c1 * x + c2;
 }
 
-void adjustSalinity(float currentSalinity, float setpoint)
+void adjustSalinity(float currentSalinity, float setpoint, float UCL, float LCL)
 {
   // input: current salinity and salinity setpoint
   // output: none
   // calls openSolenoid() to adjust salinity of system to a target salinity
 
-  // Set target salinity to 80% of the difference between current salinity and setpoint
-  int targetSalinity = currentSalinity - (currentSalinity - setpoint) * 0.8;
-
-  if (targetSalinity > currentSalinity) {
-    openSolenoid(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water
-  }
-  else {
-    openSolenoid(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
+  // check if salinity percentage is outside of control limits
+  if (salinityPercentage > UCL || salinityPercentage < LCL)
+  {
+    // Set target salinity to 80% of the difference between current salinity and setpoint
+    int targetSalinity = currentSalinity - (currentSalinity - setpoint) * 0.8;
+    if (targetSalinity > currentSalinity)
+    {
+      addWater(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water
+    }
+    else
+    {
+      addWater(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
+    }
   }
 }
 
-float openSolenoid(float targetSalinity, float currentSalinity, int addedSalinity, int pin)
+void addWater(float targetSalinity, float currentSalinity, int addedSalinity, int pin)
 {
   // input: targetSalinity (of system),
   //        currentSalinity (of system),
@@ -202,18 +207,24 @@ float openSolenoid(float targetSalinity, float currentSalinity, int addedSalinit
   //        pin (of solenoid used to adjust system salinity)
   // opens solenoid at <pin> for appropriate time to reach targetSalinity
 
-  const float overflowFraction = 1; // Fraction of added water that overflows before mixing
-  const float totalMass = 0;        // Total mass of water in a filled system
-  const float flowRate = 0;         // Mass flow rate of solenoids
+  const float overflowFraction = .2; // Fraction of added water that overflows before mixing
+  const float totalMass = .25;       // Total mass of water in a filled system (kg)
+  const float flowRate = .01;        // Mass flow rate of solenoids (kg/s)
   // calculate mass of water to add
-  float  massToAdd = totalMass *
+  massToAdd = totalMass *
               (currentSalinity - targetSalinity) /
               (currentSalinity - addedSalinity) *
               (1 / 1 - overflowFraction);
   // calculate time needed to add appropriate quantity of mass and open solenoid
-  float wtime = massToAdd / flowRate;
+  float time = massToAdd / flowRate * 1000; // x1000 to convert to ms
+  openSolenoid(pin, time)
+}
+
+void toggleSolenoid(int pin, int time)
+{
+  // Opens solenoid at <pin> for <time> in ms.
   digitalWrite(pin, 1);
-  delay(wtime);
+  delay(time);
   digitalWrite(pin, 0);
 }
 
@@ -264,7 +275,7 @@ void lcdFancySetup() { //setup lcd with fancy display
   int cpos = 4; //counter pos for cursor to print string
   int npos = 0; //counter for position within string
   int i; //alternating incrementation
-  String nacahd = "N.A.C.A.H.D."; //creates nacahd string to be referenced
+  string nacahd = "N.A.C.A.H.D."; //creates nacahd string to be referenced
   
   lcd.init();
   lcd.backlight();
