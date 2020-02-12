@@ -11,7 +11,7 @@ function salinity_calibration_v2
 % known salinity (0.0wt%, 0.05wt%, 0.10wt%, 0.15wt%)
 % voltage divider circuit uses a 10k ohm fixed resistor
 % Firs 4 rows of sheet are ignored
-raw_data = readtable('calibrationdata.xlsx', 'range', '4:149');
+raw_data = readtable('calibrationdata_v2.xlsx', 'range', '4:120');
 
 % Convert to matrix
 raw_data = raw_data{:,:};

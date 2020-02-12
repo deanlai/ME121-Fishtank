@@ -59,19 +59,19 @@ void loop()
     // b1 --> low point determined from DI water average reading
     // b2 --> mid point at 0.05 wt% to transition from one fit line to the next
     // b3 --> high point determined from 0.15 wt% water reading
-    const float cl1 = 9.0881533e-05;
-    const float cl2 = -6.9069865e-03;
-    const float ch1 = 8.5798207e-04;
-    const float ch2 = -4.8485778e-01;
-    const int b1 = 76;
-    const int b2 = 626;
-    const int b3 = 737;
+    const float cl1 = 9.5754848e-05;
+    const float cl2 = -7.7561327e-03;
+    const float ch1 = 8.5607131e-04;
+    const float ch2 = -4.6129742e-01;
+    const int b1 = 81;
+    const int b2 = 603;
+    const int b3 = 708;
 
     // declare setpoint(wt %) and sigma (a)
-    float setpoint = 0;
-    float sigma_analog = 0;
+    const float setpoint = 0;
+    const float sigma_analog = 0;
     // convert sigma_analog to wt %
-    float sigma = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, sigma_analog);
+    const float sigma = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, sigma_analog);
 
     // setup variables
     int numReadings = 30;     // number of readings per salinity reading
@@ -92,6 +92,12 @@ void loop()
     if (millis() > deadtime + 12000) {
         adjustSalinity(salinityPercentage, setpoint, UCL, LCL); // Adjust salinity using solenoids
         deadtime = millis();                          // Set deadtime timer to current millis() value
+    }
+
+    // Toggle Solenoid on/off cycle 10 times to calibrate flow rate
+    for (int i=0, i<10, i++) {
+        openSolenoid(freshPin, 1000);
+        delay(1000);
     }
 
     // Print to LCD Screen
@@ -180,15 +186,15 @@ void adjustSalinity(float currentSalinity, float setpoint, float UCL, float LCL)
         // Set target salinity to 80% of the difference between current salinity and setpoint
         int targetSalinity = currentSalinity - (currentSalinity - setpoint) * 0.8;
         if (targetSalinity > currentSalinity) {
-            openSolenoid(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water
+            addWater(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water
         }
         else {
-            openSolenoid(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
+            addWater(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
         }
     }
 }
 
-float openSolenoid(float targetSalinity, float currentSalinity, int addedSalinity, int pin)
+void addWater(float targetSalinity, float currentSalinity, int addedSalinity, int pin)
 {
     // input: targetSalinity (of system),
     //        currentSalinity (of system),
@@ -196,22 +202,27 @@ float openSolenoid(float targetSalinity, float currentSalinity, int addedSalinit
     //        pin (of solenoid used to adjust system salinity)
     // opens solenoid at <pin> for appropriate time to reach targetSalinity
 
-    const float overflowFraction = 1; // Fraction of added water that overflows before mixing
-    const float totalMass = 0;        // Total mass of water in a filled system
-    const float flowRate = 0;         // Mass flow rate of solenoids
+    const float overflowFraction = .2; // Fraction of added water that overflows before mixing
+    const float totalMass = .25;         // Total mass of water in a filled system (kg)
+    const float flowRate = .01;          // Mass flow rate of solenoids (kg/s)
     // calculate mass of water to add
     massToAdd = totalMass *
                 (currentSalinity - targetSalinity) /
                 (currentSalinity - addedSalinity) *
                 (1 / 1 - overflowFraction);
     // calculate time needed to add appropriate quantity of mass and open solenoid
-    time = massToAdd / flowRate;
+    float time = massToAdd / flowRate * 1000; // x1000 to convert to ms
+    openSolenoid(pin, time)
+}
+
+void toggleSolenoid(int pin, int time) {
+    // Opens solenoid at <pin> for <time> in ms.
     digitalWrite(pin, 1);
     delay(time);
     digitalWrite(pin, 0);
 }
 
-int buttonRead(int buttonIn) {
+void buttonRead(int buttonIn) {
     // input: button Pin
     // Reads button state and swaps state of toggled variable if button is pressed for sufficient time
 
