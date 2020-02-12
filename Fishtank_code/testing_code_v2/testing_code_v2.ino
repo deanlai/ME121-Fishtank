@@ -295,7 +295,7 @@ void lcdFancySetup() { //setup lcd with fancy display
   lcd.clear();
 }
 
-void lcdSimpleUpdate () {
+void lcdSimpleUpdate (float salinityPercentage, float salinityReading) {
 
   // Print to LCD Screen, just salinity info
   lcd.setCursor(1, 0);
