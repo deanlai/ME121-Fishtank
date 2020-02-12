@@ -68,10 +68,10 @@ void loop()
     const int b3 = 708;
 
     // declare setpoint(wt %) and sigma (a)
-    float setpoint = 0;
-    float sigma_analog = 0;
+    const float setpoint = 0;
+    const float sigma_analog = 0;
     // convert sigma_analog to wt %
-    float sigma = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, sigma_analog);
+    const float sigma = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, sigma_analog);
 
     // setup variables
     int numReadings = 30;     // number of readings per salinity reading
