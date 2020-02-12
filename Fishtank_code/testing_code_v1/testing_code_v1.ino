@@ -44,9 +44,8 @@ void setup()
     pinMode(buttonIn, INPUT_PULLUP);
     Serial.begin(9600);
 
-    // Setup LCD
-    lcd.init();      // initiate LCD
-    lcd.backlight(); // backlight on
+    //setup LCD
+    lcdFancySetup();
 }
 
 void loop()
@@ -90,6 +89,8 @@ void loop()
     float UCL = setpoint + 3 * sigma;
     float LCL = setpoint - 3 * sigma;
 
+    
+
     // take a salinity reading
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
     // Convert from analog to salinity percentage using s = (a/c1)^(1/c2)
@@ -102,26 +103,12 @@ void loop()
     // }
 
     // Toggle Solenoid on/off cycle 10 times to calibrate flow rate
-    for (int i=0, i<10, i++) {
-        openSolenoid(freshPin, 1000);
+    for (int i=0; i<10; i++) {
+        toggleSolenoid(freshPin, 1000);
         delay(1000);
     }
 
-    // Print to LCD Screen
-    lcd.setCursor(1, 0);
-    lcd.print("N.A.C.A.H.D.");
-    lcd.setCursor(0, 1); // Print to second row
-    lcd.print("Percent salt: ");
-    lcd.print(salinityPercentage, 4); // to 4 decimal places accuracy
-    lcd.setCursor(0, 2);              // Print to third row
-    lcd.print("Analog read: ");
-    lcd.print(salinityReading);
-    lcd.print("   "); // added empty characters to clear trailing digits
-    delay(80);        // delay between refresh
-    if (salinityPercentage > 0.1475) {
-        lcd.setCursor(0, 3);
-        lcd.print("Salinity Too High"); //model too high salinity with upper section calibration data for est
-    }
+   
 
     // ----- FOR TESTING AND DEBUGGING -----
     // -------------------------------------
@@ -134,6 +121,10 @@ void loop()
 
     // Print to Serial Monitor (for data analysis)
     Serial.println(salinityReading);
+
+    //LCD update 
+    // in order: sLCL, sSP, sUCL, tLCL, tSP, tUCL, current salinity, current temp, heater state
+    lcdUpdate(1,2,3,4,5,6,7,8,9);
 }
 
 float takeReading(int powerPin, int readingPin, int numReadings)
@@ -186,7 +177,7 @@ void adjustSalinity(float currentSalinity, float setpoint, float UCL, float LCL,
 {
     // input: current salinity and salinity setpoint
     // output: none
-    // calls openSolenoid() to adjust salinity of system to a target salinity
+    // calls toggleSolenoid() to adjust salinity of system to a target salinity
 
     // check if salinity percentage is outside of control limits
     if (salinityPercentage > UCL || salinityPercentage < LCL) {
@@ -219,7 +210,7 @@ void addWater(float targetSalinity, float currentSalinity, int addedSalinity, in
                 (1 / 1 - overflowFraction);
     // calculate time needed to add appropriate quantity of mass and open solenoid
     float time = massToAdd / flowRate * 1000; // x1000 to convert to ms
-    openSolenoid(pin, time)
+    toggleSolenoid(pin, time)
 }
 
 void toggleSolenoid(int pin, int time) {
@@ -260,4 +251,140 @@ void relayTest(int toggled)
       digitalWrite(saltyPin), 0);
       digitalWrite(freshPin, 0);
     }
+}
+
+
+void lcdSimpleSetup() {
+
+  lcd.init();
+  lcd.backlight();
+
+}
+
+void lcdFancySetup() { //setup lcd with fancy display
+  
+  int ppos = 4; //counter position for cursor to print periods
+  int cpos = 4; //counter pos for cursor to print string
+  int npos = 0; //counter for position within string
+  int i; //alternating incrementation
+  String nacahd = "N.A.C.A.H.D."; //creates nacahd string to be referenced
+  
+  lcd.init();
+  lcd.backlight();
+ 
+  //this loop prints periods, notice total chars/2 because we print 2 chars each loop
+  for (int poscount = 0; poscount < 6; poscount++) {
+    lcd.setCursor(ppos, 1); //counter moves cursor
+    lcd.print(" .");
+    ppos += 2; //cursor moves 2 spaces because there are 2 characters
+    delay(150); //mess with this to best dramatic effect
+  }
+  
+  delay(800);
+  
+  //this loop prints NACAHD with each individual letter printed separately using string position calling (npos)
+  for (int poscount = 0; poscount < 6; poscount++) {
+    //lcd.scrollDisplayLeft();
+    lcd.setCursor(cpos, 1); //counter moves cursor
+    lcd.print(nacahd.charAt(npos)); //prints the character referenced by the position (npos) in nacahd string
+    npos += 2; //iterate counters
+    cpos += 2;
+    delay(150);
+  }
+  
+  delay(800);
+  
+  //this loop blinks the word "initializing"
+  for (int i = 0; i < 6; i++) { //
+    if (i % 2 == 1) { //modulo to check whether i is odd to change between 2 states
+      lcd.setCursor(3, 2);
+      lcd.print("Initiating...");
+      delay(500);
+    }
+    else {
+      lcd.setCursor(3, 2);
+      lcd.print("             ");
+      delay(380);
+    }
+  }
+  lcd.clear();
+}
+
+void lcdSimpleUpdate (float salinityPercentage, float salinityReading) {
+
+  // Print to LCD Screen, just salinity info
+  lcd.setCursor(1, 0);
+  lcd.print("N.A.C.A.H.D.");
+  lcd.setCursor(0, 1); // Print to second row
+  lcd.print("Percent salt: ");
+  lcd.print(salinityPercentage, 4); // to 4 decimal places accuracy
+  lcd.setCursor(0, 2);              // Print to third row
+  lcd.print("Analog read: ");
+  lcd.print(salinityReading);
+  lcd.print("   "); // added empty characters to clear trailing digits
+  delay(80);        // delay between refresh
+  if (salinityPercentage > 0.1475) {
+    lcd.setCursor(0, 3);
+    lcd.print("Salinity Too High"); //model too high salinity with upper section calibration data for est
+  }
+}
+
+void lcdUpdate(float sLCL, float sSP, float sUCL, 
+               float tLCL, float tSP, float tUCL, 
+               float saltNow, float tempNow, int heater) {
+                
+  //LCL is lower control limit
+  //SP is set point
+  //UCL is upper control limit
+  // S and T in rows 1 and 2 are salinity and temp controls
+  //S, T, and H on the bottom are the current values, H is whether the heater is on
+
+  //Current values
+  String heaterState; // "on" or "off"
+
+  //if/else block to modify heaterState based on whether the heater is on or not, arbitrary var names used here
+  if (heater == 1) {
+    heaterState = "ON";
+  }
+  else {
+    heaterState = "OFF";
+  }
+
+  //first row
+  lcd.setCursor(4, 0);
+  lcd.print("LCL    SP   UCL ");
+
+  //second row, Salinity
+  lcd.setCursor(0, 1);
+  lcd.print("S: ");
+  lcd.setCursor(3, 1);
+  lcd.print(sLCL);
+  lcd.setCursor(9, 1);
+  lcd.print(sSP);
+  lcd.setCursor(15, 1);
+  lcd.print(sUCL);
+
+  //third row, Temp
+  lcd.setCursor(0, 2);
+  lcd.print("T:");
+  lcd.setCursor(4, 2);
+  lcd.print(tLCL);
+  lcd.setCursor(10, 2);
+  lcd.print(tSP);
+  lcd.setCursor(16, 2);
+  lcd.print(tSP);
+
+  //fourth row, current states
+  lcd.setCursor(0, 3);
+  lcd.print("S=");
+  lcd.setCursor(2, 3);
+  lcd.print(saltNow);
+  lcd.setCursor(8, 3);
+  lcd.print("T=");
+  lcd.setCursor(10, 3);
+  lcd.print(tempNow);
+  lcd.setCursor(15, 3);
+  lcd.print("H=");
+  lcd.setCursor(17, 3);
+  lcd.print(heaterState);
 }
