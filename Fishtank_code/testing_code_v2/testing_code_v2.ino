@@ -307,22 +307,17 @@ void lcdFancySetup() { //setup lcd with fancy display
   lcd.clear();
 }
 
-void lcdUpdate() {
+void lcdUpdate(float sLCL, float sSP, float sUCL, 
+               float tLCL, float tSP, float tUCL, 
+               float saltNow, float tempNow, int heater) {
+                
   //LCL is lower control limit
   //SP is set point
   //UCL is upper control limit
   // S and T in rows 1 and 2 are salinity and temp controls
   //S, T, and H on the bottom are the current values, H is whether the heater is on
 
-  //Salinity Parameters
-  float sLCL, sSP, sUCL;
-
-  //Temp parameters
-  float tLCL, tSP, tUCL;
-
   //Current values
-  int heater; //placeholder so that heaterState string control will compile
-  float saltNow, tempNow;
   String heaterState; // "on" or "off"
 
   //if/else block to modify heaterState based on whether the heater is on or not, arbitrary var names used here
