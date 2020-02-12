@@ -31,6 +31,9 @@ long debounce = 150;   // Delay checking conditional for time of physical button
 // for timing sensing
 int currentTime = millis();
 
+// timer used to allow water to mix
+clock = 0;
+
 void setup()
 {
     // Setup pins and serial comms
@@ -73,11 +76,15 @@ void loop()
     // convert sigma_analog to wt %
     const float sigma = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, sigma_analog);
 
+    // setup constants
+
+
     // setup variables
+    float gain = 0.8;           // Gain used for error correction
     int numReadings = 30;     // number of readings per salinity reading
     int salinityReading;      // current analog reading from salinity sensor
     float salinityPercentage; // current salinity percentage
-    int deadtime = -12000;             // timer used to allow water to mix
+    int deadtime = 12000;     // calibrated deadtime before making further corrections;   
 
     // compute UCL & LCL
     float UCL = setpoint + 3 * sigma;
@@ -88,11 +95,11 @@ void loop()
     // Convert from analog to salinity percentage using s = (a/c1)^(1/c2)
     salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
 
-    // check if enough deadtime has passed and perform an adjustment if check suceeds
-    if (millis() > deadtime + 12000) {
-        adjustSalinity(salinityPercentage, setpoint, UCL, LCL); // Adjust salinity using solenoids
-        deadtime = millis();                          // Set deadtime timer to current millis() value
-    }
+    // // check if enough deadtime has passed and perform an adjustment if check suceeds
+    // if (millis() > clock + deadtime) {
+    //     adjustSalinity(salinityPercentage, setpoint, UCL, LCL, gain); // Adjust salinity using solenoids
+    //     clock = millis();                          // Set deadtime timer to current millis() value
+    // }
 
     // Toggle Solenoid on/off cycle 10 times to calibrate flow rate
     for (int i=0, i<10, i++) {
@@ -175,7 +182,7 @@ float evaluatePolynomial(int x, float c1, float c2)
     return c1 * x + c2;
 }
 
-void adjustSalinity(float currentSalinity, float setpoint, float UCL, float LCL)
+void adjustSalinity(float currentSalinity, float setpoint, float UCL, float LCL, float gain)
 {
     // input: current salinity and salinity setpoint
     // output: none
@@ -184,7 +191,7 @@ void adjustSalinity(float currentSalinity, float setpoint, float UCL, float LCL)
     // check if salinity percentage is outside of control limits
     if (salinityPercentage > UCL || salinityPercentage < LCL) {
         // Set target salinity to 80% of the difference between current salinity and setpoint
-        int targetSalinity = currentSalinity - (currentSalinity - setpoint) * 0.8;
+        int targetSalinity = currentSalinity - (currentSalinity - setpoint) * gain;
         if (targetSalinity > currentSalinity) {
             addWater(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water
         }
