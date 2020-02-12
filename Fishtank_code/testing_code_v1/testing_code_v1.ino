@@ -97,7 +97,7 @@ void loop()
 
     // Toggle Solenoid on/off cycle 10 times to calibrate flow rate
     for (int i=0; i<10; i++) {
-        openSolenoid(freshPin, 1000);
+        toggleSolenoid(freshPin, 1000);
         delay(1000);
     }
 
@@ -170,7 +170,7 @@ void adjustSalinity(float currentSalinity, float setpoint, float UCL, float LCL)
 {
     // input: current salinity and salinity setpoint
     // output: none
-    // calls openSolenoid() to adjust salinity of system to a target salinity
+    // calls toggleSolenoid() to adjust salinity of system to a target salinity
 
     // check if salinity percentage is outside of control limits
     if (salinityPercentage > UCL || salinityPercentage < LCL) {
@@ -203,7 +203,7 @@ void addWater(float targetSalinity, float currentSalinity, int addedSalinity, in
                 (1 / 1 - overflowFraction);
     // calculate time needed to add appropriate quantity of mass and open solenoid
     float time = massToAdd / flowRate * 1000; // x1000 to convert to ms
-    openSolenoid(pin, time)
+    toggleSolenoid(pin, time)
 }
 
 void toggleSolenoid(int pin, int time) {
