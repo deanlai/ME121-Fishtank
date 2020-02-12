@@ -102,21 +102,6 @@ void loop()
     deadtime = millis();                          // Set deadtime timer to current millis() value
   }
 
-  // Print to LCD Screen
-  lcd.setCursor(1, 0);
-  lcd.print("N.A.C.A.H.D.");
-  lcd.setCursor(0, 1); // Print to second row
-  lcd.print("Percent salt: ");
-  lcd.print(salinityPercentage, 4); // to 4 decimal places accuracy
-  lcd.setCursor(0, 2);              // Print to third row
-  lcd.print("Analog read: ");
-  lcd.print(salinityReading);
-  lcd.print("   "); // added empty characters to clear trailing digits
-  delay(80);        // delay between refresh
-  if (salinityPercentage > 0.1475) {
-    lcd.setCursor(0, 3);
-    lcd.print("Salinity Too High"); //model too high salinity with upper section calibration data for est
-  }
 
   // ----- FOR TESTING AND DEBUGGING -----
   // -------------------------------------
@@ -129,6 +114,9 @@ void loop()
 
   // Print to Serial Monitor (for data analysis)
   Serial.println(salinityReading);
+
+  // in order: sLCL, sSP, sUCL, tLCL, tSP, tUCL, current salinity, current temp, heater state
+  lcdUpdate(1,2,3,4,5,6,7,8,9);
 }
 
 float takeReading(int powerPin, int readingPin, int numReadings)
@@ -177,29 +165,24 @@ float evaluatePolynomial(int x, float c1, float c2)
   return c1 * x + c2;
 }
 
-void adjustSalinity(float currentSalinity, float setpoint, float UCL, float LCL)
+void adjustSalinity(float currentSalinity, float setpoint)
 {
   // input: current salinity and salinity setpoint
   // output: none
   // calls openSolenoid() to adjust salinity of system to a target salinity
 
-  // check if salinity percentage is outside of control limits
-  if (salinityPercentage > UCL || salinityPercentage < LCL)
-  {
-    // Set target salinity to 80% of the difference between current salinity and setpoint
-    int targetSalinity = currentSalinity - (currentSalinity - setpoint) * 0.8;
-    if (targetSalinity > currentSalinity)
-    {
-      addWater(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water
-    }
-    else
-    {
-      addWater(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
-    }
+  // Set target salinity to 80% of the difference between current salinity and setpoint
+  int targetSalinity = currentSalinity - (currentSalinity - setpoint) * 0.8;
+
+  if (targetSalinity > currentSalinity) {
+    openSolenoid(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water
+  }
+  else {
+    openSolenoid(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
   }
 }
 
-void addWater(float targetSalinity, float currentSalinity, int addedSalinity, int pin)
+float openSolenoid(float targetSalinity, float currentSalinity, int addedSalinity, int pin)
 {
   // input: targetSalinity (of system),
   //        currentSalinity (of system),
@@ -207,24 +190,18 @@ void addWater(float targetSalinity, float currentSalinity, int addedSalinity, in
   //        pin (of solenoid used to adjust system salinity)
   // opens solenoid at <pin> for appropriate time to reach targetSalinity
 
-  const float overflowFraction = .2; // Fraction of added water that overflows before mixing
-  const float totalMass = .25;       // Total mass of water in a filled system (kg)
-  const float flowRate = .01;        // Mass flow rate of solenoids (kg/s)
+  const float overflowFraction = 1; // Fraction of added water that overflows before mixing
+  const float totalMass = 0;        // Total mass of water in a filled system
+  const float flowRate = 0;         // Mass flow rate of solenoids
   // calculate mass of water to add
-  massToAdd = totalMass *
+  float  massToAdd = totalMass *
               (currentSalinity - targetSalinity) /
               (currentSalinity - addedSalinity) *
               (1 / 1 - overflowFraction);
   // calculate time needed to add appropriate quantity of mass and open solenoid
-  float time = massToAdd / flowRate * 1000; // x1000 to convert to ms
-  openSolenoid(pin, time)
-}
-
-void toggleSolenoid(int pin, int time)
-{
-  // Opens solenoid at <pin> for <time> in ms.
+  float wtime = massToAdd / flowRate;
   digitalWrite(pin, 1);
-  delay(time);
+  delay(wtime);
   digitalWrite(pin, 0);
 }
 
@@ -275,7 +252,7 @@ void lcdFancySetup() { //setup lcd with fancy display
   int cpos = 4; //counter pos for cursor to print string
   int npos = 0; //counter for position within string
   int i; //alternating incrementation
-  string nacahd = "N.A.C.A.H.D."; //creates nacahd string to be referenced
+  String nacahd = "N.A.C.A.H.D."; //creates nacahd string to be referenced
   
   lcd.init();
   lcd.backlight();
@@ -316,6 +293,25 @@ void lcdFancySetup() { //setup lcd with fancy display
     }
   }
   lcd.clear();
+}
+
+void lcdSimpleUpdate () {
+
+  // Print to LCD Screen, just salinity info
+  lcd.setCursor(1, 0);
+  lcd.print("N.A.C.A.H.D.");
+  lcd.setCursor(0, 1); // Print to second row
+  lcd.print("Percent salt: ");
+  lcd.print(salinityPercentage, 4); // to 4 decimal places accuracy
+  lcd.setCursor(0, 2);              // Print to third row
+  lcd.print("Analog read: ");
+  lcd.print(salinityReading);
+  lcd.print("   "); // added empty characters to clear trailing digits
+  delay(80);        // delay between refresh
+  if (salinityPercentage > 0.1475) {
+    lcd.setCursor(0, 3);
+    lcd.print("Salinity Too High"); //model too high salinity with upper section calibration data for est
+  }
 }
 
 void lcdUpdate(float sLCL, float sSP, float sUCL, 
