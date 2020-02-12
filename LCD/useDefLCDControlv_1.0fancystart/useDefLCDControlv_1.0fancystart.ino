@@ -59,7 +59,35 @@ void lcdSetup(){ //setup lcd with fancy display
 }
 
 void lcdUpdate () {
+  //okay I did this ineffeciently, non changing rows can be whole strings in one print
+  //also gotta think of best way to store displayed  data and interface, something clever
+  //this is brute force and it's ugly and lame
+  //I need to go to sleep and shouldn't have gotten distracted doing it in the first place
+  //first row on LCD screen, this does not change
+  lcd.setCursor(4,0);
+  lcd.print("LCL");
+  lcd.setCursor(11,0);
+  lcd.print("SP");
+  lcd.setCursor(16,0);
+  lcd.print("UCL");
 
+  // second row, this does change
+  lcd.setCursor(0,1);
+  lcd.print("S");
+  lcd.setCursor(3,1);
+  lcd.print(whatever goes under LCL on row S);
+  lcd.setCursor(9,1);
+  lcd.print(row s SP);
+  lcd.setCursor(15,1);
+  lcd.print(row s UCL);
 
-  
+  lcd.setCursor(0,2);
+  lcd.print("T:");
+
+  lcd.setCursor(0,3);
+  lcd.print("S=");
+  lcd.setCursor(8,3);
+  lcd.print("T=");
+  lcd.setCursor(15,3);
+  lcd.print("H=");
 }
