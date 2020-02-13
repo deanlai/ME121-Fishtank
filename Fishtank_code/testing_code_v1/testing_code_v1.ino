@@ -32,7 +32,7 @@ long debounce = 150;   // Delay checking conditional for time of physical button
 int currentTime = millis();
 
 // timer used to allow water to mix
-clock = 0;
+int clock = 0;
 
 void setup()
 {
@@ -45,7 +45,7 @@ void setup()
     Serial.begin(9600);
 
     //setup LCD
-    lcdFancySetup();
+    // lcdFancySetup();
 }
 
 void loop()
@@ -96,35 +96,34 @@ void loop()
     // Convert from analog to salinity percentage using s = (a/c1)^(1/c2)
     salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
 
-    // // check if enough deadtime has passed and perform an adjustment if check suceeds
-    // if (millis() > clock + deadtime) {
-    //     adjustSalinity(salinityPercentage, setpoint, UCL, LCL, gain); // Adjust salinity using solenoids
-    //     clock = millis();                          // Set deadtime timer to current millis() value
-    // }
+    // check if enough deadtime has passed and perform an adjustment if check suceeds
+    if (millis() > clock + deadtime) {
+        adjustSalinity(salinityPercentage, setpoint, UCL, LCL, gain); // Adjust salinity using solenoids
+        clock = millis();                          // Set deadtime timer to current millis() value
+    }
 
     // Toggle Solenoid on/off cycle 10 times to calibrate flow rate
     for (int i=0; i<10; i++) {
         toggleSolenoid(freshPin, 1000);
-        delay(1000);
+        toggleSolenoid(saltyPin, 1000);
     }
 
-   
 
-    // ----- FOR TESTING AND DEBUGGING -----
-    // -------------------------------------
+        // ----- FOR TESTING AND DEBUGGING -----
+        // -------------------------------------
 
-    // read button to manually actuate solenoids using relayTest()
-    // Usage: hold down button for a second to toggle relay state
-    buttonRead(buttonIn); // read button state and swap toggle
-    digitalWrite(buttonLED, toggled);
-    relayTest(toggled); // actuate relays based on toggle state
+        // read button to manually actuate solenoids using relayTest()
+        // Usage: hold down button for a second to toggle relay state
+        buttonRead(buttonIn); // read button state and swap toggle
+        digitalWrite(buttonLED, toggled);
+        relayTest(toggled); // actuate relays based on toggle state
 
-    // Print to Serial Monitor (for data analysis)
-    Serial.println(salinityReading);
+        // Print to Serial Monitor (for data analysis)
+        Serial.println(salinityReading);
 
-    //LCD update 
-    // in order: sLCL, sSP, sUCL, tLCL, tSP, tUCL, current salinity, current temp, heater state
-    lcdUpdate(1,2,3,4,5,6,7,8,9);
+        //LCD update
+        // in order: sLCL, sSP, sUCL, tLCL, tSP, tUCL, current salinity, current temp, heater state
+        lcdUpdate(1,2,3,4,5,6,7,8,9);
 }
 
 float takeReading(int powerPin, int readingPin, int numReadings)
@@ -180,7 +179,7 @@ void adjustSalinity(float currentSalinity, float setpoint, float UCL, float LCL,
     // calls toggleSolenoid() to adjust salinity of system to a target salinity
 
     // check if salinity percentage is outside of control limits
-    if (salinityPercentage > UCL || salinityPercentage < LCL) {
+    if (currentSalinity > UCL || currentSalinity < LCL) {
         // Set target salinity to 80% of the difference between current salinity and setpoint
         int targetSalinity = currentSalinity - (currentSalinity - setpoint) * gain;
         if (targetSalinity > currentSalinity) {
@@ -204,13 +203,13 @@ void addWater(float targetSalinity, float currentSalinity, int addedSalinity, in
     const float totalMass = .25;         // Total mass of water in a filled system (kg)
     const float flowRate = .01;          // Mass flow rate of solenoids (kg/s)
     // calculate mass of water to add
-    massToAdd = totalMass *
+    float massToAdd = totalMass *
                 (currentSalinity - targetSalinity) /
                 (currentSalinity - addedSalinity) *
                 (1 / 1 - overflowFraction);
     // calculate time needed to add appropriate quantity of mass and open solenoid
     float time = massToAdd / flowRate * 1000; // x1000 to convert to ms
-    toggleSolenoid(pin, time)
+    toggleSolenoid(pin, time);
 }
 
 void toggleSolenoid(int pin, int time) {
@@ -248,7 +247,7 @@ void relayTest(int toggled)
       digitalWrite(freshPin, 1);
     }
     else if (toggled == 0) {
-      digitalWrite(saltyPin), 0);
+      digitalWrite(saltyPin, 0);
       digitalWrite(freshPin, 0);
     }
 }
