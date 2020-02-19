@@ -119,7 +119,9 @@ void loop()
         relayTest(toggled); // actuate relays based on toggle state
 
         // Print to Serial Monitor (for data analysis)
-        Serial.println(salinityReading);
+        Serial.print(salinityReading);
+        Serial.print("  ");
+        Serial.println("%.3f", millis()/1000);
 
         //LCD update
         // in order: sLCL, sSP, sUCL, tLCL, tSP, tUCL, current salinity, current temp, heater state
