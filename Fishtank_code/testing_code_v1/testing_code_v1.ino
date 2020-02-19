@@ -1,3 +1,5 @@
+
+
 //--------------------------------------------------------
 // Testing Code
 // Version 1.0
@@ -243,7 +245,7 @@ void relayTest(int toggled)
 {
     // turns all transistors on or off based on toggled state
     if (toggled == 1) {
-      digitalWrite(saltyPin), 1);
+      digitalWrite(saltyPin, 1);
       digitalWrite(freshPin, 1);
     }
     else if (toggled == 0) {
