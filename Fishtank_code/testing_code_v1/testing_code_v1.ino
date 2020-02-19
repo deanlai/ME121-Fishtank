@@ -46,14 +46,17 @@ void setup()
     pinMode(buttonIn, INPUT_PULLUP);
     Serial.begin(9600);
 
-    //setup LCD
-    // lcdFancySetup();
+    
+    lcdFancySetup();
 }
 
 void loop()
 {
     // declare local pins
     const int SALINITY_READING_PIN = A0;
+
+    //for deadtimecalibration
+    unsigned long prevsalinityupdate = millis();
 
     // declare constants and breakpoints for polynomial fit
     // Note on using constants:
@@ -90,7 +93,17 @@ void loop()
     // compute UCL & LCL
     float UCL = setpoint + 3 * sigma;
     float LCL = setpoint - 3 * sigma;
+    
+    buttonRead(buttonIn);
+    
+    if(currentState==1){
+      
+      digitalWrite(saltyPin, HIGH);
+      digitalWrite(freshPin, HIGH);
+      delay(240000);
+    }
 
+    else {
     
 
     // take a salinity reading
@@ -98,17 +111,34 @@ void loop()
     // Convert from analog to salinity percentage using s = (a/c1)^(1/c2)
     salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
 
-    // check if enough deadtime has passed and perform an adjustment if check suceeds
+    /*/ check if enough deadtime has passed and perform an adjustment if check suceeds
     if (millis() > clock + deadtime) {
         adjustSalinity(salinityPercentage, setpoint, UCL, LCL, gain); // Adjust salinity using solenoids
         clock = millis();                          // Set deadtime timer to current millis() value
     }
+    */
 
-    // Toggle Solenoid on/off cycle 10 times to calibrate flow rate
+    /*/ Toggle Solenoid on/off cycle 10 times to calibrate flow rate
     for (int i=0; i<10; i++) {
         toggleSolenoid(freshPin, 1000);
         toggleSolenoid(saltyPin, 1000);
     }
+    */
+       toggleSolenoid(freshPin, 1000);
+       //toggleSolenoid(saltyPin, 1000);
+       while((millis()-prevsalinityupdate)<30000){
+          // take a salinity reading
+          salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
+          // Convert from analog to salinity percentage using s = (a/c1)^(1/c2)
+          salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
+          Serial.println(salinityPercentage);
+          lcd.clear();
+          lcd.setCursor(0,1);
+          lcd.print(salinityPercentage);
+          delay(10);
+       }
+       
+    
 
 
         // ----- FOR TESTING AND DEBUGGING -----
@@ -116,17 +146,20 @@ void loop()
 
         // read button to manually actuate solenoids using relayTest()
         // Usage: hold down button for a second to toggle relay state
-        buttonRead(buttonIn); // read button state and swap toggle
-        digitalWrite(buttonLED, toggled);
-        relayTest(toggled); // actuate relays based on toggle state
+       // buttonRead(buttonIn); // read button state and swap toggle
+        //digitalWrite(buttonLED, toggled);
+        //relayTest(toggled); // actuate relays based on toggle state
 
         // Print to Serial Monitor (for data analysis)
-        Serial.println(salinityReading);
+        //Serial.println(salinityReading);
 
         //LCD update
         // in order: sLCL, sSP, sUCL, tLCL, tSP, tUCL, current salinity, current temp, heater state
-        lcdUpdate(1,2,3,4,5,6,7,8,9);
+        //lcdUpdate(1,2,3,4,5,6,7,8,9);
 }
+}
+
+
 
 float takeReading(int powerPin, int readingPin, int numReadings)
 {
