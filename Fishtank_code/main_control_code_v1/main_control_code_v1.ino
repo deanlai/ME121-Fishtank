@@ -69,6 +69,7 @@ void loop()
     float sUCL = sSetpoint + 3*sSigma;
     float sLCL = sSetpoint - 3*sSigma;
 
+    // Things actually happen down here ---------------------------------------------------
     // take a salinity reading
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
     // Convert from analog to salinity percentage using s = (a/c1)^(1/c2)
@@ -130,10 +131,10 @@ void adjustSalinity(float currentSalinity, float setpoint, float UCL, float LCL,
     // input: current salinity and salinity setpoint
     // output: none
     // calls openSolenoid() to adjust salinity of system to a target salinity
-    static int lastAdjustment = 0 - deadtime;
+    static int lastAdjustment = 0;
 
     // Check if 
-    if (millis() > lastAdjustment + 12000){
+    if (millis() - lastAdjustment > deadtime){
     // check if salinity percentage is outside of control limits
         if (salinityPercentage > UCL || salinityPercentage < LCL) {
             // Set target salinity to 80% of the difference between current salinity and setpoint
@@ -145,8 +146,9 @@ void adjustSalinity(float currentSalinity, float setpoint, float UCL, float LCL,
                 addWater(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
             }
         }
+        lastAdjustment = millis();
     }
-    lastAdjustment = millis();
+   
 }
 
 void addWater(float targetSalinity, float currentSalinity, int addedSalinity, int pin)
