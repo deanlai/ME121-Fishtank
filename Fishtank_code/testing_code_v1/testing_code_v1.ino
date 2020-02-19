@@ -293,7 +293,7 @@ void lcdFancySetup() { //setup lcd with fancy display
   
   delay(800);
   
-  //this loop blinks the word "initializing"
+  //this loop blinks the string "initiating..."
   for (int i = 0; i < 6; i++) { //
     if (i % 2 == 1) { //modulo to check whether i is odd to change between 2 states
       lcd.setCursor(3, 2);
