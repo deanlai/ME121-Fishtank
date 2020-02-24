@@ -29,7 +29,8 @@ void setup()
     pinMode(freshPin, OUTPUT);
 
     // Setup LCD
-    lcdFancySetup();
+    //lcdFancySetup();
+    lcdSimpleSetup();
 
     // Setup serial comms
     Serial.begin(9600);
@@ -95,19 +96,23 @@ void loop()
     // take temperature reading and convert to system temperature
     tempReading = analogRead(TEMPERATURE_READING_PIN);
     systemTemp = findTempFromAnalog(tempReading);
-    static int startTime = 0;
-
+    static int startTime;
     // Adjust salinity using solenoids
     Serial.print("solenoid time: ");
     Serial.print(solenoidTime);
     Serial.print(" | ");
-    Serial.print()
+    Serial.print(digitalRead(pinToToggle));
+    Serial.print(" | startTime: ");
+    Serial.println(startTime);
+
     solenoidTime = adjustSalinity(salinityPercentage, sSetpoint, sUCL, sLCL, deadtime, &pinToToggle);
     if (solenoidTime > 0 && digitalRead(pinToToggle) == 0) {
         digitalWrite(pinToToggle, 1);
         startTime = millis();
     }
-    if (millis() - startTime > solenoidTime) {
+    
+    if (millis() - startTime > solenoidTime && digitalRead(pinToToggle) == 1)
+    {
         digitalWrite(pinToToggle, 0);
         solenoidTime = 0;
     }
@@ -347,4 +352,10 @@ void lcdUpdate(float sLCL, float sSP, float sUCL,
     lcd.print("H=");
     lcd.setCursor(17, 3);
     lcd.print(heaterState);
+}
+void lcdSimpleSetup()
+{
+
+    lcd.init();
+    lcd.backlight();
 }
