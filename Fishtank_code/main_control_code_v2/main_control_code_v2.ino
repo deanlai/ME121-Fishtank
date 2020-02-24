@@ -98,7 +98,7 @@ void loop()
 
     // Adjust salinity using solenoids
     setAdjustmentTimes(salinityPercentage, sSetpoint, sUCL, sLCL, deadtime, &solPin, &solTime);
-
+    
     //turn solenoids on or off
     toggleSolenoids(solPin, solTime, deadtime);
     
@@ -106,6 +106,8 @@ void loop()
     lcdUpdate(sLCL, sSetpoint, sUCL, tLCL, tSetpoint, tUCL, salinityPercentage, systemTemp, heaterState);
     
 }
+
+
 
 void toggleSolenoids(int solPin, int solTime, int deadtime){
   //this function controls the solenoids, that is all it does
@@ -117,9 +119,22 @@ void toggleSolenoids(int solPin, int solTime, int deadtime){
     solStatus = 1;
     startTime = millis();
   }
+ 
   else if ((millis()-startTime) > solTime){
     digitalWrite(solPin, LOW);
     solStatus = 0;
+  }
+
+  if ((millis()-startTime) < deadtime) {
+    //this throws a little deadtime clock up in upper left corner
+    int lcddeadDisplay = (((deadtime-(millis()-startTime))/1000));
+    lcd.setCursor(0,0);
+    lcd.print(lcddeadDisplay);
+    lcd.print(" ");
+    if(lcddeadDisplay == 0){
+      lcd.setCursor(0,0);
+      lcd.print("   ");
+    }
   }
   
 }
@@ -177,7 +192,6 @@ float setAdjustmentTimes(float currentSalinity, float setpoint, float UCL, float
     // calls openSolenoid() to adjust salinity of system to a target salinity
 
     if (currentSalinity > UCL || currentSalinity < LCL) {
-        Serial.println("outside limits.");
         // Set target salinity to 80% of the difference between current salinity and setpoint
         float targetSalinity = currentSalinity - (currentSalinity - setpoint) * 0.8;
         if (targetSalinity > currentSalinity) {
