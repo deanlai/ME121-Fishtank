@@ -66,15 +66,15 @@ void loop()
     float salinityPercentage; // current salinity percentage
     float tempReading;        // current analog reading from thermistor
     float systemTemp;         // current temperature of system (deg C)
-    static float solenoidTime = 0;
-    int pinToToggle;
+    float solTime = 0;
+    int solPin;
 
     // declare sigma(analog) and deadtime from calibration
     // note: s & t prefixes refer to salinity and temperature
     float sSetpoint = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, 
                                              analogRead(S_SETPOINT_PIN)); // Compute setpoint from pot reading
     const float sSigma_analog = 2.265; // from calibration of salinity percentages
-    const int deadtime = 15000;    // averaged 
+    const unsigned long deadtime = 15000;    // averaged 
     // convert sigma_analog to wt %
 
     float tSetpoint = findTempFromAnalog(analogRead(T_SETPOINT_PIN)); // Compute setpoint from pot reading
@@ -96,26 +96,9 @@ void loop()
     // take temperature reading and convert to system temperature
     tempReading = analogRead(TEMPERATURE_READING_PIN);
     systemTemp = findTempFromAnalog(tempReading);
-    static int startTime;
-    // Adjust salinity using solenoids
-    Serial.print("solenoid time: ");
-    Serial.print(solenoidTime);
-    Serial.print(" | ");
-    Serial.print(digitalRead(pinToToggle));
-    Serial.print(" | startTime: ");
-    Serial.println(startTime);
 
-    solenoidTime = adjustSalinity(salinityPercentage, sSetpoint, sUCL, sLCL, deadtime, &pinToToggle);
-    if (solenoidTime > 0 && digitalRead(pinToToggle) == 0) {
-        digitalWrite(pinToToggle, 1);
-        startTime = millis();
-    }
-    
-    if (millis() - startTime > solenoidTime && digitalRead(pinToToggle) == 1)
-    {
-        digitalWrite(pinToToggle, 0);
-        solenoidTime = 0;
-    }
+    // Adjust salinity using solenoids
+    setAdjustmentTimes(salinityPercentage, sSetpoint, sUCL, sLCL, deadtime, &solPin, &solTime);
 
     // Update LCD screen
     lcdUpdate(sLCL, sSetpoint, sUCL, tLCL, tSetpoint, tUCL, salinityPercentage, systemTemp, heaterState);
@@ -168,36 +151,30 @@ float findTempFromAnalog(int analogReading){
 
 }
 
-float adjustSalinity(float currentSalinity, float setpoint, float UCL, float LCL, int deadtime, int*pinToToggle)
+float setAdjustmentTimes(float currentSalinity, float setpoint, float UCL, float LCL, int deadtime, int* solPin, int* solTime)
 {
     // input: current salinity and salinity setpoint
     // output: none
     // calls openSolenoid() to adjust salinity of system to a target salinity
-    static int lastAdjustment = 0;
 
-    // Check if 
-    if (millis() - lastAdjustment > deadtime){
-    // check if salinity percentage is outside of control limits
-        lastAdjustment = millis();
-        if (currentSalinity > UCL || currentSalinity < LCL) {
-            Serial.println("outside limits.");
-            // Set target salinity to 80% of the difference between current salinity and setpoint
-            float targetSalinity = currentSalinity - (currentSalinity - setpoint) * 0.8;
-            if (targetSalinity > currentSalinity) {
-                *pinToToggle = saltyPin;
-                return addWater(targetSalinity, currentSalinity, 1, saltyPin); // add 1% salted water
-            }
-            else {
-                *pinToToggle = freshPin;
-                return addWater(targetSalinity, currentSalinity, 0, freshPin); // add 0% DI water
-            }
+    if (currentSalinity > UCL || currentSalinity < LCL) {
+        Serial.println("outside limits.");
+        // Set target salinity to 80% of the difference between current salinity and setpoint
+        float targetSalinity = currentSalinity - (currentSalinity - setpoint) * 0.8;
+        if (targetSalinity > currentSalinity) {
+            *solPin = saltyPin; // sets salty pin to be adjusted
+            setTime(targetSalinity, currentSalinity, 1, saltyPin, solTime); // sets time for salty solenoid
         }
-        return 0;
+        else {
+            *solPin = freshPin; // sets fresh pin to be adjusted
+            setTime(targetSalinity, currentSalinity, 0, freshPin, solTime); // sets time for fresh solenoid
+        }
     }
+    return 0;
    
 }
 
-float addWater(float targetSalinity, float currentSalinity, int addedSalinity, int pin)
+float setTime(float targetSalinity, float currentSalinity, int addedSalinity, int pin, int* time)
 {
     // input: targetSalinity (of system),
     //        currentSalinity (of system),
@@ -209,10 +186,10 @@ float addWater(float targetSalinity, float currentSalinity, int addedSalinity, i
     const float totalMass = .143;       // Total mass of water in a filled system (kg)
     float flowRate = 0;        // Mass flow rate of solenoids (kg/s)
     if (addedSalinity == 1) {
-        flowRate = .003633;
+        flowRate = .003633; // Salty tank flow rate
     }
     else {
-        flowRate = .004167;
+        flowRate = .004167; // Fresh tank flow rate
     }
     // calculate mass of water to add 
     float massToAdd = totalMass *
@@ -220,21 +197,9 @@ float addWater(float targetSalinity, float currentSalinity, int addedSalinity, i
                       (currentSalinity - addedSalinity) *
                       (1 / (1 - overflowFraction));
     // calculate time needed to add appropriate quantity of mass and open solenoid
-    float time = ( massToAdd / flowRate ) * 1000; // x1000 to convert to ms 
-    Serial.print("time = ");
-    Serial.println(time);
-    return time;
+    *time = ( massToAdd / flowRate ) * 1000; // x1000 to convert to ms. Sets solTime in loop() to calculated time
 }
 
-void toggleSolenoid(int pin, int time)
-{
-    // Opens solenoid at <pin> for <time> in ms.
-    digitalWrite(pin, 1);
-    Serial.print("solenoid time: ");
-    Serial.println(time);
-    delay(time);
-    digitalWrite(pin, 0);
-}
 
 void lcdFancySetup()
 { //setup lcd with fancy display
