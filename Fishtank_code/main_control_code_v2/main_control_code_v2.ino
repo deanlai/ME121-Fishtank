@@ -19,6 +19,7 @@ LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 20, 4); // 20x4 LCD screen, 0x27
 const int SALINITY_POWER_PIN = 8;
 const int saltyPin = 10; 
 const int freshPin = 11;
+const int heaterPin = 12;
 int heaterState = 0;
 
 void setup()
@@ -33,6 +34,9 @@ void setup()
 
     // Setup serial comms
     Serial.begin(9600);
+
+  
+    systemFlush();
 }
 
 void loop()
@@ -42,6 +46,7 @@ void loop()
     const int TEMPERATURE_READING_PIN = A1;
     const int S_SETPOINT_PIN = A2;
     const int T_SETPOINT_PIN = A3;
+    
 
     // declare constants and breakpoints for polynomial fit of salinity calibration
     // Note on using constants:
@@ -181,9 +186,6 @@ float evaluatePolynomial(int x, float c1, float c2) {
     return c1*x + c2;
 }
 
-float findTempFromAnalog(int analogReading){
-
-}
 
 float setAdjustmentTimes(float currentSalinity, float setpoint, float UCL, float LCL, int deadtime, int* solPin, float* solTime)
 {
@@ -233,6 +235,35 @@ float setTime(float targetSalinity, float currentSalinity, int addedSalinity, fl
     *time = ( massToAdd / flowRate ) * 1000; // x1000 to convert to ms. Sets solTime in loop() to calculated time
 }
 
+void adjustTemp(float LCL, float setpoint, int* heaterState, float* temp) {
+
+  //*temp = findTemp(analogRead(TEMPERATURE_READING_PIN));
+  if (*temp < LCL) {
+    digitalWrite(heaterPin, HIGH);
+    *heaterState = 1;
+  }
+  else {
+    digitalWrite(heaterPin, LOW);
+    *heaterState = 0;
+  }
+}
+
+float findTemp(int reading) {
+  
+}
+
+float findTempFromAnalog(int fakereading) {
+  
+}
+
+void systemFlush(){
+  lcd.setCursor(1, 2);
+  lcd.print("SYSTEM FLUSH");
+  delay(3000);
+  digitalWrite(10, HIGH);
+  digitalWrite(11, HIGH);
+  delay(500000);
+}
 
 void lcdFancySetup()
 { //setup lcd with fancy display
