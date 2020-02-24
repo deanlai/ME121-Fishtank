@@ -81,6 +81,7 @@ void loop()
     float tSigma_analog = 0;
     float tSigma = findTempFromAnalog(tSigma_analog);
 
+
     // compute UCL & LCL for salinity and temperature
     float sUCL = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3,
                                         analogRead(S_SETPOINT_PIN) + 5*sSigma_analog);
