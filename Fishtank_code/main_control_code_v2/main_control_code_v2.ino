@@ -35,8 +35,8 @@ void setup()
     // Setup serial comms
     Serial.begin(9600);
 
-  
-    systemFlush();
+    //comment this out unless you mean to do it pls
+    //systemFlush();
 }
 
 void loop()
@@ -259,7 +259,7 @@ float findTempFromAnalog(int fakereading) {
 void systemFlush(){
   lcd.setCursor(1, 2);
   lcd.print("SYSTEM FLUSH");
-  delay(3000);
+  delay(2000);
   digitalWrite(10, HIGH);
   digitalWrite(11, HIGH);
   delay(500000);
