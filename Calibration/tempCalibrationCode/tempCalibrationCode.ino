@@ -17,11 +17,12 @@ void setup() {
 void loop() {
   
   int reading;
-  delay(25);
+
   reading = analogRead(tempPin);
   Serial.println(reading);
-  lcd.setCursor(3, 1);
+  lcd.setCursor(1, 1);
+  lcd.print("Analog Read: ");
   lcd.print(reading);
-  
+  delay(25);
   
 }
