@@ -130,13 +130,13 @@ void toggleSolenoids(int solPin, int solTime, int deadtime){
     }
  
     else if ((millis()-startTime) > solTime){
-        // closes solenoid if solTime has passed
+    // closes solenoid if solTime has passed
         digitalWrite(solPin, LOW);
         solStatus = 0;      // sset solenoid status to closed
     }
 
     if ((millis()-startTime) < deadtime) {
-        // prints a deadtime clock up in upper left corner
+    // prints a deadtime clock up in upper left corner
         int lcddeadDisplay = (((deadtime-(millis()-startTime))/1000));
         lcd.setCursor(0,0);
         lcd.print(lcddeadDisplay);
