@@ -92,9 +92,10 @@ void loop() //------------------- LOOP -----------------------------------------
     // convert sigma_analog to wt %
 
     // Compute setpoint from pot reading
-    float tSetpoint = findTemp(analogRead(TEMPERATURE_READING_PIN), tc1, tc2, tc3); 
+    float tSetpoint = findTemp(analogRead(T_SETPOINT_PIN), tc1, tc2, tc3); 
     float tSigma_analog = 0;
-    float tSigma = findTemp(analogRead(TEMPERATURE_READING_PIN), tc1, tc2, tc3);
+    float tSigma = findTemp(tSigma_analog, tc1, tc2, tc3);
+    systemTemp = findTemp(analogRead(TEMPERATURE_READING_PIN), tc1, tc2, tc3); 
 
     // compute UCL & LCL for salinity and temperature
     float sUCL = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3,
@@ -122,7 +123,7 @@ void loop() //------------------- LOOP -----------------------------------------
     // Update LCD screen
     lcdUpdate(sLCL, sSetpoint, sUCL, tLCL, tSetpoint, tUCL, salinityPercentage, systemTemp, heaterState);
     
-}
+} // <-this bracket ends loop
 
 
 //-------------------------------- FUNCTIONS -------------------------------------------------------------------------------------------
@@ -255,9 +256,9 @@ float setTime(float targetSalinity, float currentSalinity, int addedSalinity, fl
     *time = ( massToAdd / flowRate ) * 1000; // x1000 to convert to ms. Sets solTime in loop() to calculated time
 }
 
+
 void adjustTemp(float LCL, float setpoint, int* heaterState, float* temp) {
 
-  //*temp = findTemp(analogRead(TEMPERATURE_READING_PIN));
   if (*temp < LCL) {
     digitalWrite(heaterPin, HIGH);
     *heaterState = 1;
