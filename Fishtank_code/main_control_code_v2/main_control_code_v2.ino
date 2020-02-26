@@ -1,6 +1,6 @@
 //--------------------------------------------------------
 // Main Control Code
-// Version 2.0
+// Version 1.0
 // 2/9/20
 // The North American Council on Aquatic Housing and Development
 // Extends sensor_reading code base to actuate solenoids
@@ -28,6 +28,7 @@ void setup()
     pinMode(SALINITY_POWER_PIN, OUTPUT);
     pinMode(saltyPin, OUTPUT);
     pinMode(freshPin, OUTPUT);
+    pinMode(heaterPin, OUTPUT);
 
     // Setup LCD
     lcdSimpleSetup();
@@ -35,8 +36,8 @@ void setup()
     // Setup serial comms
     Serial.begin(9600);
 
-  
-    systemFlush();
+    //comment this out unless you mean to do it pls
+    //systemFlush();
 }
 
 void loop()
@@ -64,14 +65,26 @@ void loop()
     const int b2 = 603;
     const int b3 = 708;
 
+    //declare constants for Temperature Calibration polynomial fit 
+    //Notes: 
+    // "t" prefix indicates that the constant is for the temperature poly fit
+    // c indicates that it is a constant
+    // tc1, tc2... is the order of the constants for temp in deg Celsius as a function of analog reading
+    const float tc1 = 1.5464668e-04;
+    const float tc2 = -6.8341165e-02;
+    const float tc3 = 1.8217030e+01;
+
+
+
+    
     // setup variables
     int numReadings = 30;     // number of readings per salinity reading
     int salinityReading;      // current analog reading from salinity sensor
     float salinityPercentage; // current salinity percentage
     float tempReading;        // current analog reading from thermistor
     float systemTemp;         // current temperature of system (deg C)
-    float solTime = 0;        // time to hold solenoid open
-    int solPin;               // pin of solenoid to open
+    float solTime = 0;
+    int solPin;
 
     // declare sigma(analog) and deadtime from calibration
     // note: s & t prefixes refer to salinity and temperature
@@ -93,8 +106,7 @@ void loop()
     float tUCL = tSetpoint + 3 * tSigma;
     float tLCL = tSetpoint - 3 * tSigma;
 
-    // --------------- Things actually happen down here -----------------------
-
+    // Things actually happen down here ---------------------------------------------------
     // take a salinity reading and convert to percentage salt
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
     salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
@@ -105,7 +117,7 @@ void loop()
     // Adjust salinity using solenoids
     setAdjustmentTimes(salinityPercentage, sSetpoint, sUCL, sLCL, deadtime, &solPin, &solTime);
     
-    // turn solenoids on or off
+    //turn solenoids on or off
     toggleSolenoids(solPin, solTime, deadtime);
     
     // Update LCD screen
@@ -116,36 +128,32 @@ void loop()
 
 
 void toggleSolenoids(int solPin, int solTime, int deadtime){
-    // this function controls the solenoids, that is all it does
-    static unsigned long startTime = (-1)*deadtime; // allows system to make adjustments immediately after powering on
-    static int solStatus = 0; // 0 = closed, 1 = open
+  //this function controls the solenoids, that is all it does
+  static unsigned long startTime = (-1)*deadtime; //so that it doesnt freak out in the first 15 seconds of being on
+  static int solStatus = 0;
 
-    if (solStatus == 0 && solTime > 0 && (millis()-startTime) > deadtime) {
-    // checks that: solenoid is closed,
-    //              time to open solenoid is > 0,
-    //              deadtime has passed 
+  if (solStatus == 0 && solTime > 0 && (millis()-startTime) > deadtime) {
     digitalWrite(solPin, HIGH);
-    solStatus = 1;          // set solenoid status to open
-    startTime = millis();   // set start time
-    }
+    solStatus = 1;
+    startTime = millis();
+  }
  
-    else if ((millis()-startTime) > solTime){
-    // closes solenoid if solTime has passed
-        digitalWrite(solPin, LOW);
-        solStatus = 0;      // sset solenoid status to closed
-    }
+  else if ((millis()-startTime) > solTime){
+    digitalWrite(solPin, LOW);
+    solStatus = 0;
+  }
 
-    if ((millis()-startTime) < deadtime) {
-    // prints a deadtime clock up in upper left corner
-        int lcddeadDisplay = (((deadtime-(millis()-startTime))/1000));
-        lcd.setCursor(0,0);
-        lcd.print(lcddeadDisplay);
-        lcd.print(" ");
-        if(lcddeadDisplay == 0){
-            lcd.setCursor(0,0);
-            lcd.print("   ");
-        }
+  if ((millis()-startTime) < deadtime) {
+    //this throws a little deadtime clock up in upper left corner
+    int lcddeadDisplay = (((deadtime-(millis()-startTime))/1000));
+    lcd.setCursor(0,0);
+    lcd.print(lcddeadDisplay);
+    lcd.print(" ");
+    if(lcddeadDisplay == 0){
+      lcd.setCursor(0,0);
+      lcd.print("   ");
     }
+  }
   
 }
 
@@ -192,11 +200,11 @@ float evaluatePolynomial(int x, float c1, float c2) {
 }
 
 
-float setAdjustmentTimes(float currentSalinity, float setpoint, float UCL, float LCL,
-                         int deadtime, int* solPin, float* solTime) {
-    // input: current salinity, setpoint, UCL, LCL, deadtime, solenoid pin, solenoid open time
+float setAdjustmentTimes(float currentSalinity, float setpoint, float UCL, float LCL, int deadtime, int* solPin, float* solTime)
+{
+    // input: current salinity and salinity setpoint
     // output: none
-    // modifies solTime and solPin for toggleSolenoids() function
+    // calls openSolenoid() to adjust salinity of system to a target salinity
 
     if (currentSalinity > UCL || currentSalinity < LCL) {
         // Set target salinity to 80% of the difference between current salinity and setpoint
@@ -210,7 +218,8 @@ float setAdjustmentTimes(float currentSalinity, float setpoint, float UCL, float
             setTime(targetSalinity, currentSalinity, 0, solTime); // sets time for fresh solenoid
         }
     }
-    return 0; 
+    return 0;
+   
 }
 
 float setTime(float targetSalinity, float currentSalinity, int addedSalinity, float* time)
@@ -218,30 +227,30 @@ float setTime(float targetSalinity, float currentSalinity, int addedSalinity, fl
     // input: targetSalinity (of system),
     //        currentSalinity (of system),
     //        addedSalinity (% salinity of fluid to be added),
-    //        solTime from loop()
-    // calculates time to open solenoid, and modifies solTime for use in toggleSolenoids() function
+    //        pin (of solenoid used to adjust system salinity)
+    // opens solenoid at <pin> for appropriate time to reach targetSalinity
 
-    const float overflowFraction = .2;  // Fraction of added water that overflows before mixing
+    const float overflowFraction = .2; // Fraction of added water that overflows before mixing
     const float totalMass = .143;       // Total mass of water in a filled system (kg)
-    float flowRate = 0;                 // Mass flow rate of solenoids (kg/s)
+    float flowRate = 0;        // Mass flow rate of solenoids (kg/s)
     if (addedSalinity == 1) {
-        flowRate = .003633; // Experimental salty tank flow rate
+        flowRate = .003633; // Salty tank flow rate
     }
     else {
-        flowRate = .004167; // Experimental fresh tank flow rate
+        flowRate = .004167; // Fresh tank flow rate
     }
     // calculate mass of water to add 
     float massToAdd = totalMass *
                       (currentSalinity - targetSalinity) /
                       (currentSalinity - addedSalinity) *
                       (1 / (1 - overflowFraction));
-    // calculate time needed to add appropriate quantity of mass
+    // calculate time needed to add appropriate quantity of mass and open solenoid
     *time = ( massToAdd / flowRate ) * 1000; // x1000 to convert to ms. Sets solTime in loop() to calculated time
 }
 
 void adjustTemp(float LCL, float setpoint, int* heaterState, float* temp) {
 
-  *temp = findTemp(analogRead(TEMPERATURE_READING_PIN));
+  //*temp = findTemp(analogRead(TEMPERATURE_READING_PIN));
   if (*temp < LCL) {
     digitalWrite(heaterPin, HIGH);
     *heaterState = 1;
@@ -263,7 +272,7 @@ float findTempFromAnalog(int fakereading) {
 void systemFlush(){
   lcd.setCursor(1, 2);
   lcd.print("SYSTEM FLUSH");
-  delay(3000);
+  delay(2000);
   digitalWrite(10, HIGH);
   digitalWrite(11, HIGH);
   delay(500000);
