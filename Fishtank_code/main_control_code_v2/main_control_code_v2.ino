@@ -40,7 +40,7 @@ void setup()
     //systemFlush();
 }
 
-void loop()
+void loop() //------------------- LOOP ----------------------------------------------------------------------------
 {
     // declare local pins
     const int SALINITY_READING_PIN = A0;
@@ -74,9 +74,6 @@ void loop()
     const float tc2 = -6.8341165e-02;
     const float tc3 = 1.8217030e+01;
 
-
-
-    
     // setup variables
     int numReadings = 30;     // number of readings per salinity reading
     int salinityReading;      // current analog reading from salinity sensor
@@ -94,9 +91,10 @@ void loop()
     const unsigned long deadtime = 15000;    // averaged 
     // convert sigma_analog to wt %
 
-    float tSetpoint = findTempFromAnalog(analogRead(T_SETPOINT_PIN)); // Compute setpoint from pot reading
+    // Compute setpoint from pot reading
+    float tSetpoint = findTemp(analogRead(TEMPERATURE_READING_PIN), tc1, tc2, tc3); 
     float tSigma_analog = 0;
-    float tSigma = findTempFromAnalog(tSigma_analog);
+    float tSigma = findTemp(analogRead(TEMPERATURE_READING_PIN), tc1, tc2, tc3);
 
     // compute UCL & LCL for salinity and temperature
     float sUCL = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3,
@@ -106,14 +104,15 @@ void loop()
     float tUCL = tSetpoint + 3 * tSigma;
     float tLCL = tSetpoint - 3 * tSigma;
 
-    // Things actually happen down here ---------------------------------------------------
+//------------------------------- ACTUAL CONTROL  --------------------------------------------------------------------------------------
+    
     // take a salinity reading and convert to percentage salt
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
     salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
+    
     // take temperature reading and convert to system temperature
-    tempReading = analogRead(TEMPERATURE_READING_PIN);
-    systemTemp = findTempFromAnalog(tempReading);
-
+    findTemp(analogRead(TEMPERATURE_READING_PIN), tc1, tc2, tc3);
+    
     // Adjust salinity using solenoids
     setAdjustmentTimes(salinityPercentage, sSetpoint, sUCL, sLCL, deadtime, &solPin, &solTime);
     
@@ -125,6 +124,8 @@ void loop()
     
 }
 
+
+//-------------------------------- FUNCTIONS -------------------------------------------------------------------------------------------
 
 
 void toggleSolenoids(int solPin, int solTime, int deadtime){
@@ -194,9 +195,15 @@ float findSalinityPercentage(float c1, float c2, float c3, float c4,
     }
 }
 
+// THIS EVALS FIRST DEGREE POLY
 float evaluatePolynomial(int x, float c1, float c2) {
     // evaluates y = c1*x + c2 and returns y
     return c1*x + c2;
+}
+// THIS EVALS SECOND DEGREE POLY
+float evaluate2ndPolynomial(int x, float c1, float c2, float c3) {
+    //evaluates y = c1*x^2 + c2*x + 3 and returns y
+    return c1*(x^2) + c2*x + c3;
 }
 
 
@@ -261,12 +268,9 @@ void adjustTemp(float LCL, float setpoint, int* heaterState, float* temp) {
   }
 }
 
-float findTemp(int reading) {
-  
-}
-
-float findTempFromAnalog(int fakereading) {
-  
+//call with findTemp(analogRead(TEMPERATURE_READING_PIN)); for temperature in degrees Celsius 
+float findTemp(int reading, float c1, float c2, float c3) {
+   return evaluate2ndPolynomial(reading, c1, c2, c3);
 }
 
 void systemFlush(){
