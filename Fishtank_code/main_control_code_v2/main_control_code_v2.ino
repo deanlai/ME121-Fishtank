@@ -206,7 +206,7 @@ float evaluatePolynomial(int x, float c1, float c2) {
 // THIS EVALS SECOND DEGREE POLY
 float evaluate2ndPolynomial(int x, float c1, float c2, float c3) {
     //evaluates y = c1*x^2 + c2*x + 3 and returns y
-    return float(c1*x*x + c2*x + c3);
+    return c1*x*x + c2*x + c3;
 }
 
 
