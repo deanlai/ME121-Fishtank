@@ -118,6 +118,9 @@ void loop() //------------------- LOOP -----------------------------------------
     
     //turn solenoids on or off
     toggleSolenoids(solPin, solTime, deadtime);
+
+    //turn heater on or off - HEATER PINS ARE CURRENTLY DEACTIVATED
+    adjustTemp(tLCL, tSetpoint, &heaterState, &systemTemp);
     
     // Update LCD screen
     lcdUpdate(sLCL, sSetpoint, sUCL, tLCL, tSetpoint, tUCL, salinityPercentage, systemTemp, heaterState);
@@ -259,11 +262,11 @@ float setTime(float targetSalinity, float currentSalinity, int addedSalinity, fl
 void adjustTemp(float LCL, float setpoint, int* heaterState, float* temp) {
 
   if (*temp < LCL) {
-    digitalWrite(heaterPin, HIGH);
+    //digitalWrite(heaterPin, HIGH);
     *heaterState = 1;
   }
   else {
-    digitalWrite(heaterPin, LOW);
+    //digitalWrite(heaterPin, LOW);
     *heaterState = 0;
   }
 }
