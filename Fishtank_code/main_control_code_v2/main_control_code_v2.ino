@@ -93,7 +93,7 @@ void loop() //------------------- LOOP -----------------------------------------
 
     // Compute setpoint from pot reading
     float tSetpoint = findTemp(analogRead(T_SETPOINT_PIN), tc1, tc2, tc3); 
-    float tSigma_analog = 0;
+    float tSigma_analog = 1;
     float tSigma = findTemp(tSigma_analog, tc1, tc2, tc3);
     systemTemp = findTemp(analogRead(TEMPERATURE_READING_PIN), tc1, tc2, tc3); 
 
@@ -102,8 +102,9 @@ void loop() //------------------- LOOP -----------------------------------------
                                         analogRead(S_SETPOINT_PIN) + 5*sSigma_analog);
     float sLCL = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3,
                                         analogRead(S_SETPOINT_PIN) - 5*sSigma_analog);
-    float tUCL = tSetpoint + 3 * tSigma;
-    float tLCL = tSetpoint - 3 * tSigma;
+    
+    float tUCL = findTemp(analogRead(T_SETPOINT_PIN)-3*tSigma_analog, tc1, tc2, tc3); 
+    float tLCL = findTemp(analogRead(T_SETPOINT_PIN)+3*tSigma_analog, tc1, tc2, tc3); 
 
 //------------------------------- ACTUAL CONTROL  --------------------------------------------------------------------------------------
     
@@ -111,8 +112,6 @@ void loop() //------------------- LOOP -----------------------------------------
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
     salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
     
-    // take temperature reading and convert to system temperature
-    findTemp(analogRead(TEMPERATURE_READING_PIN), tc1, tc2, tc3);
     
     // Adjust salinity using solenoids
     setAdjustmentTimes(salinityPercentage, sSetpoint, sUCL, sLCL, deadtime, &solPin, &solTime);
@@ -204,7 +203,7 @@ float evaluatePolynomial(int x, float c1, float c2) {
 // THIS EVALS SECOND DEGREE POLY
 float evaluate2ndPolynomial(int x, float c1, float c2, float c3) {
     //evaluates y = c1*x^2 + c2*x + 3 and returns y
-    return c1*(x^2) + c2*x + c3;
+    return c1*(x*x) + c2*x + c3;
 }
 
 
@@ -370,31 +369,31 @@ void lcdUpdate(float sLCL, float sSP, float sUCL,
     lcd.setCursor(0, 1);
     lcd.print("S: ");
     lcd.setCursor(3, 1);
-    lcd.print(sLCL);
+    lcd.print(sLCL,3);
     lcd.setCursor(9, 1);
-    lcd.print(sSP);
+    lcd.print(sSP, 3);
     lcd.setCursor(15, 1);
-    lcd.print(sUCL);
+    lcd.print(sUCL, 3);
 
     //third row, Temp
     lcd.setCursor(0, 2);
     lcd.print("T:");
     lcd.setCursor(4, 2);
-    lcd.print(tLCL);
+    lcd.print(tLCL, 1);
     lcd.setCursor(10, 2);
-    lcd.print(tSP);
+    lcd.print(tSP, 1);
     lcd.setCursor(16, 2);
-    lcd.print(tSP);
+    lcd.print(tUCL, 1);
 
     //fourth row, current states
     lcd.setCursor(0, 3);
     lcd.print("S=");
     lcd.setCursor(2, 3);
     lcd.print(saltNow);
-    lcd.setCursor(8, 3);
+    lcd.setCursor(7, 3);
     lcd.print("T=");
-    lcd.setCursor(10, 3);
-    lcd.print(tempNow);
+    lcd.setCursor(9, 3);
+    lcd.print(tempNow, 1);
     lcd.setCursor(15, 3);
     lcd.print("H=");
     lcd.setCursor(17, 3);
