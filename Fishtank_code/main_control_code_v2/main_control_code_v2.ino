@@ -17,6 +17,7 @@ LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 20, 4); // 20x4 LCD screen, 0x27
 
 // delcare global pins and heater state
 const int SALINITY_POWER_PIN = 8;
+const int TEMP_POWER_PIN = 9;
 const int saltyPin = 10; 
 const int freshPin = 11;
 const int heaterPin = 12;
@@ -26,6 +27,7 @@ void setup()
 {
     // Setup pins and serial comms
     pinMode(SALINITY_POWER_PIN, OUTPUT);
+    pinMode(TEMP_POWER_PIN, OUTPUT);
     pinMode(saltyPin, OUTPUT);
     pinMode(freshPin, OUTPUT);
     pinMode(heaterPin, OUTPUT);
@@ -95,7 +97,8 @@ void loop() //------------------- LOOP -----------------------------------------
     float tSetpoint = findTemp(analogRead(T_SETPOINT_PIN), tc1, tc2, tc3); 
     float tSigma_analog = 1;
     float tSigma = findTemp(tSigma_analog, tc1, tc2, tc3);
-    systemTemp = findTemp(analogRead(TEMPERATURE_READING_PIN), tc1, tc2, tc3); 
+    systemTemp = findTemp(takeReading(TEMP_POWER_PIN, TEMPERATURE_READING_PIN, 3),
+                          tc1, tc2, tc3); 
 
     // compute UCL & LCL for salinity and temperature
     float sUCL = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3,
@@ -273,7 +276,10 @@ void adjustTemp(float LCL, float setpoint, int* heaterState, float* temp) {
 
 //call with findTemp(analogRead(TEMPERATURE_READING_PIN)); for temperature in degrees Celsius 
 float findTemp(int reading, float c1, float c2, float c3) {
+   digitalWrite(TEMP_POWER_PIN, HIGH);
+   delay(5);
    return evaluate2ndPolynomial(reading, c1, c2, c3);
+   
 }
 
 void systemFlush(){
