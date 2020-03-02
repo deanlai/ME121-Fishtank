@@ -223,9 +223,10 @@ float evaluate2ndPolynomial(int x, float c1, float c2, float c3) {
 
 float setAdjustmentTimes(float currentSalinity, float setpoint, float UCL, float LCL, int deadtime, int* solPin, float* solTime)
 {
-    // input: current salinity and salinity setpoint
+    // input: current salinity and salinity setpoint, control limits,
+    // and pointers to solenoid pin and time.
     // output: none
-    // calls openSolenoid() to adjust salinity of system to a target salinity
+    // Sets solPin to salty or fresh, calls setTime() to set open time for target solenoid
 
     if (currentSalinity > UCL || currentSalinity < LCL) {
         // Set target salinity to 80% of the difference between current salinity and setpoint
@@ -248,8 +249,8 @@ float setTime(float targetSalinity, float currentSalinity, int addedSalinity, fl
     // input: targetSalinity (of system),
     //        currentSalinity (of system),
     //        addedSalinity (% salinity of fluid to be added),
-    //        pin (of solenoid used to adjust system salinity)
-    // opens solenoid at <pin> for appropriate time to reach targetSalinity
+    //        pointer to solenoid time
+    // sets solenoid open time solTime given salinity parameters
 
     const float overflowFraction = .2; // Fraction of added water that overflows before mixing
     const float totalMass = .143;       // Total mass of water in a filled system (kg)
