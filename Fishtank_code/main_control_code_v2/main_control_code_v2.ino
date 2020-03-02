@@ -17,7 +17,7 @@ LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 20, 4); // 20x4 LCD screen, 0x27
 
 // delcare global pins and heater state
 const int SALINITY_POWER_PIN = 8;
-const int TEMP_POWER_PIN = 9;
+const int TEMP_SENSPOWER_PIN = 9;
 const int saltyPin = 10; 
 const int freshPin = 11;
 const int heaterPin = 12;
@@ -27,7 +27,7 @@ void setup()
 {
     // Setup pins and serial comms
     pinMode(SALINITY_POWER_PIN, OUTPUT);
-    pinMode(TEMP_POWER_PIN, OUTPUT);
+    pinMode(TEMP_SENSPOWER_PIN, OUTPUT);
     pinMode(saltyPin, OUTPUT);
     pinMode(freshPin, OUTPUT);
     pinMode(heaterPin, OUTPUT);
@@ -108,25 +108,25 @@ void loop() //------------------- LOOP -----------------------------------------
     float tLCL = findTemp(analogRead(T_SETPOINT_PIN)-3*tSigma_analog, tc1, tc2, tc3); 
 
 //------------------------------- ACTUAL CONTROL  --------------------------------------------------------------------------------------
-    
-    // take a salinity reading and convert to percentage salt
+//-----SENSOR READINGS    
+// take a salinity reading and convert to percentage salt
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
     salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
-
-    //take temp reading and convert it to degrees for function 
-    systemTemp = findTemp(takeReading(TEMP_POWER_PIN, TEMPERATURE_READING_PIN, 3),
+//take temp reading and convert it to degrees for function 
+    systemTemp = findTemp(takeReading(TEMP_SENSPOWER_PIN, TEMPERATURE_READING_PIN, 3),
                           tc1, tc2, tc3); 
-    
-    // Adjust salinity using solenoids
+//-----DO SOME MATH WITH SENSOR READINGS  
+    //calculate duration for solenoids to be on based on readings
     setAdjustmentTimes(salinityPercentage, sSetpoint, sUCL, sLCL, deadtime, &solPin, &solTime);
-    
+//-----MAKE CHANGES BASED ON MATH     
     //turn solenoids on or off
     toggleSolenoids(solPin, solTime, deadtime);
-
     //turn heater on or off - HEATER PINS ARE CURRENTLY DEACTIVATED
-    adjustTemp(tLCL, tSetpoint, &heaterState, &systemTemp);
+    adjustTemp(tLCL, tSetpoint, &systemTemp);
     
-    // Update LCD screen
+    
+    
+//-----UPDATE LCD
     lcdUpdate(sLCL, sSetpoint, sUCL, tLCL, tSetpoint, tUCL, salinityPercentage, systemTemp, heaterState);
     
 } // <-this bracket ends loop
@@ -263,22 +263,13 @@ float setTime(float targetSalinity, float currentSalinity, int addedSalinity, fl
 }
 
 
-void adjustTemp(float LCL, float setpoint, int* heaterState, float* temp) {
+void adjustTemp(float LCL, float setpoint, float* temp) {
 
-  if (*temp < LCL) {
-    //digitalWrite(heaterPin, HIGH);
-    *heaterState = 1;
-  }
-  else {
-    //digitalWrite(heaterPin, LOW);
-    *heaterState = 0;
-  }
+  
 }
 
 //call with findTemp(analogRead(TEMPERATURE_READING_PIN)); for temperature in degrees Celsius 
 float findTemp(int reading, float c1, float c2, float c3) {
-   digitalWrite(TEMP_POWER_PIN, HIGH);
-   delay(5);
    return evaluate2ndPolynomial(reading, c1, c2, c3);
    
 }
