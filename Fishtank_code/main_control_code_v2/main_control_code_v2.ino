@@ -275,14 +275,13 @@ float setHeaterTime(float temp, float LCL, float setPoint, float K, float K2, fl
   float heaterTime;
   if (temp<=LCL){
     error = LCL - temp;
-    heaterTime = tFrontDelay + (error-K2)/K + tEndDelay; //this should give time necessary to correct error
+    heaterTime = tFrontDelay + (error-K2)/K - tEndDelay; //this should give time necessary to correct error
   }
   else {
     heaterTime = 0;
   }
   return heaterTime;
 
-  
 }
 //turn heater on or off based on calculated time
 void adjustTemp(float HeaterTime) {
