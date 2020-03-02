@@ -95,26 +95,27 @@ void loop() //------------------- LOOP -----------------------------------------
 
     // Compute setpoint from pot reading
     float tSetpoint = findTemp(analogRead(T_SETPOINT_PIN), tc1, tc2, tc3); 
-    float tSigma_analog = 1;
+    float tSigma_analog = 2;
     float tSigma = findTemp(tSigma_analog, tc1, tc2, tc3);
-    systemTemp = findTemp(takeReading(TEMP_POWER_PIN, TEMPERATURE_READING_PIN, 3),
-                          tc1, tc2, tc3); 
 
     // compute UCL & LCL for salinity and temperature
     float sUCL = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3,
-                                        analogRead(S_SETPOINT_PIN) + 5*sSigma_analog);
+                                        analogRead(S_SETPOINT_PIN) + 3*sSigma_analog);
     float sLCL = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3,
-                                        analogRead(S_SETPOINT_PIN) - 5*sSigma_analog);
+                                        analogRead(S_SETPOINT_PIN) - 3*sSigma_analog);
     
-    float tUCL = findTemp(analogRead(T_SETPOINT_PIN)-3*tSigma_analog, tc1, tc2, tc3); 
-    float tLCL = findTemp(analogRead(T_SETPOINT_PIN)+3*tSigma_analog, tc1, tc2, tc3); 
+    float tUCL = findTemp(analogRead(T_SETPOINT_PIN)+3*tSigma_analog, tc1, tc2, tc3); 
+    float tLCL = findTemp(analogRead(T_SETPOINT_PIN)-3*tSigma_analog, tc1, tc2, tc3); 
 
 //------------------------------- ACTUAL CONTROL  --------------------------------------------------------------------------------------
     
     // take a salinity reading and convert to percentage salt
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
     salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
-    
+
+    //take temp reading and convert it to degrees for function 
+    systemTemp = findTemp(takeReading(TEMP_POWER_PIN, TEMPERATURE_READING_PIN, 3),
+                          tc1, tc2, tc3); 
     
     // Adjust salinity using solenoids
     setAdjustmentTimes(salinityPercentage, sSetpoint, sUCL, sLCL, deadtime, &solPin, &solTime);
@@ -387,11 +388,11 @@ void lcdUpdate(float sLCL, float sSP, float sUCL,
     //third row, Temp
     lcd.setCursor(0, 2);
     lcd.print("T:");
-    lcd.setCursor(4, 2);
+    lcd.setCursor(3, 2);
     lcd.print(tLCL, 1);
-    lcd.setCursor(10, 2);
+    lcd.setCursor(9, 2);
     lcd.print(tSP, 1);
-    lcd.setCursor(16, 2);
+    lcd.setCursor(15, 2);
     lcd.print(tUCL, 1);
 
     //fourth row, current states
