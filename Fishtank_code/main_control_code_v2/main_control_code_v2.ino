@@ -75,15 +75,20 @@ void loop() //------------------- LOOP -----------------------------------------
     const float tc1 = 1.5464668e-04;
     const float tc2 = -6.8341165e-02;
     const float tc3 = 1.8217030e+01;
-
+    const float cK1 = 0;      //slope of change in heat v time when heater is on
+    const float cK2 = 0;      // second coeffecient from temp change calibration
+    float tFrontDelay = 0;    //delay from heater to being on to when the system temp starts to change
+    float tEndDelay = 0;      //time it takes residual heat in radiator to dissipate
+    
     // setup variables
     int numReadings = 30;     // number of readings per salinity reading
     int salinityReading;      // current analog reading from salinity sensor
     float salinityPercentage; // current salinity percentage
     float tempReading;        // current analog reading from thermistor
     float systemTemp;         // current temperature of system (deg C)
-    float solTime = 0;
-    int solPin;
+    float heatTime = 0;       // time heater should be on
+    float solTime = 0;        // time solenoid should be open
+    int solPin;               // which solenoid should be open
 
     // declare sigma(analog) and deadtime from calibration
     // note: s & t prefixes refer to salinity and temperature
@@ -118,11 +123,13 @@ void loop() //------------------- LOOP -----------------------------------------
 //-----DO SOME MATH WITH SENSOR READINGS  
     //calculate duration for solenoids to be on based on readings
     setAdjustmentTimes(salinityPercentage, sSetpoint, sUCL, sLCL, deadtime, &solPin, &solTime);
+    //calculate duration for heater to be on 
+    setHeaterTime(systemTemp, tLCL, tSetpoint, cK1, cK2, tFrontDelay, tEndDelay);
 //-----MAKE CHANGES BASED ON MATH     
     //turn solenoids on or off
     toggleSolenoids(solPin, solTime, deadtime);
     //turn heater on or off - HEATER PINS ARE CURRENTLY DEACTIVATED
-    adjustTemp(tLCL, tSetpoint, &systemTemp);
+    adjustTemp(heatTime);
     
     
     
@@ -262,10 +269,31 @@ float setTime(float targetSalinity, float currentSalinity, int addedSalinity, fl
     *time = ( massToAdd / flowRate ) * 1000; // x1000 to convert to ms. Sets solTime in loop() to calculated time
 }
 
-
-void adjustTemp(float LCL, float setpoint, float* temp) {
+//calculate time heater should be on
+float setHeaterTime(float temp, float LCL, float setPoint, float K, float K2, float tFrontDelay, float tEndDelay) {
+  float error;
+  float heaterTime;
+  if (temp<=LCL){
+    error = LCL - temp;
+    heaterTime = tFrontDelay + (error-K2)/K + tEndDelay; //this should give time necessary to correct error
+  }
+  else {
+    heaterTime = 0;
+  }
+  return heaterTime;
 
   
+}
+//turn heater on or off based on calculated time
+void adjustTemp(float HeaterTime) {
+  if (heaterState == 0 && HeaterTime>0){
+    digitalWrite(heaterPin, HIGH);
+    heaterState = 1;
+  }
+  else if (heaterState == 1 && HeaterTime == 0) {
+    digitalWrite(heaterPin, LOW);
+    heaterState = 0;
+  }
 }
 
 //call with findTemp(analogRead(TEMPERATURE_READING_PIN)); for temperature in degrees Celsius 
