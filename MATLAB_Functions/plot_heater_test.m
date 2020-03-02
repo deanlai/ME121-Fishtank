@@ -4,7 +4,7 @@ function plot_heater_test(fname)
 %
 % Synopsis:  plot_heater_test
 %            plot_heater_test(fname)
-%
+% 
 % Input:  fname = (string) name of the input data file.
 %                 default: heater_test1.txt
 %

@@ -129,9 +129,7 @@ void loop() //------------------- LOOP -----------------------------------------
     //turn solenoids on or off
     toggleSolenoids(solPin, solTime, deadtime);
     //turn heater on or off - HEATER PINS ARE CURRENTLY DEACTIVATED
-    adjustTemp(heatTime);
-    
-    
+    adjustTemp(heatTime); 
     
 //-----UPDATE LCD
     lcdUpdate(sLCL, sSetpoint, sUCL, tLCL, tSetpoint, tUCL, salinityPercentage, systemTemp, heaterState);
