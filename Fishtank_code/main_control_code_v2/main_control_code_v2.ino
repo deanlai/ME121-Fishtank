@@ -76,7 +76,6 @@ void loop() //------------------- LOOP -----------------------------------------
     const float tc2 = -6.8341165e-02;
     const float tc3 = 1.8217030e+01;
     const float cK1 = 0;      //slope of change in heat v time when heater is on
-    const float cK2 = 0;      // second coeffecient from temp change calibration
     float tFrontDelay = 0;    //delay from heater to being on to when the system temp starts to change
     float tEndDelay = 0;      //time it takes residual heat in radiator to dissipate
     
@@ -124,7 +123,7 @@ void loop() //------------------- LOOP -----------------------------------------
     //calculate duration for solenoids to be on based on readings
     setAdjustmentTimes(salinityPercentage, sSetpoint, sUCL, sLCL, deadtime, &solPin, &solTime);
     //calculate duration for heater to be on 
-    setHeaterTime(systemTemp, tLCL, tSetpoint, cK1, cK2, tFrontDelay, tEndDelay);
+    setHeaterTime(systemTemp, tLCL, tSetpoint, cK1, tFrontDelay, tEndDelay);
 //-----MAKE CHANGES BASED ON MATH     
     //turn solenoids on or off
     toggleSolenoids(solPin, solTime, deadtime);
@@ -223,10 +222,9 @@ float evaluate2ndPolynomial(int x, float c1, float c2, float c3) {
 
 float setAdjustmentTimes(float currentSalinity, float setpoint, float UCL, float LCL, int deadtime, int* solPin, float* solTime)
 {
-    // input: current salinity and salinity setpoint, control limits,
-    // and pointers to solenoid pin and time.
+    // input: current salinity and salinity setpoint
     // output: none
-    // Sets solPin to salty or fresh, calls setTime() to set open time for target solenoid
+    // calls openSolenoid() to adjust salinity of system to a target salinity
 
     if (currentSalinity > UCL || currentSalinity < LCL) {
         // Set target salinity to 80% of the difference between current salinity and setpoint
@@ -249,8 +247,8 @@ float setTime(float targetSalinity, float currentSalinity, int addedSalinity, fl
     // input: targetSalinity (of system),
     //        currentSalinity (of system),
     //        addedSalinity (% salinity of fluid to be added),
-    //        pointer to solenoid time
-    // sets solenoid open time solTime given salinity parameters
+    //        pin (of solenoid used to adjust system salinity)
+    // opens solenoid at <pin> for appropriate time to reach targetSalinity
 
     const float overflowFraction = .2; // Fraction of added water that overflows before mixing
     const float totalMass = .143;       // Total mass of water in a filled system (kg)
@@ -271,12 +269,12 @@ float setTime(float targetSalinity, float currentSalinity, int addedSalinity, fl
 }
 
 //calculate time heater should be on
-float setHeaterTime(float temp, float LCL, float setPoint, float K, float K2, float tFrontDelay, float tEndDelay) {
+float setHeaterTime(float temp, float LCL, float setPoint, float K, float tFrontDelay, float tEndDelay) {
   float error;
   float heaterTime;
   if (temp<=LCL){
     error = LCL - temp;
-    heaterTime = tFrontDelay + (error-K2)/K - tEndDelay; //this should give time necessary to correct error
+    heaterTime = tFrontDelay + (error)/K - tEndDelay; //this should give time necessary to correct error
   }
   else {
     heaterTime = 0;

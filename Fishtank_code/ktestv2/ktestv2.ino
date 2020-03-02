@@ -37,8 +37,9 @@ void setup()
 
     // Setup serial comms
     Serial.begin(9600);
-
-    delay(2000);
+    Serial.println("Initiating... PLEASE WAIT 5S");
+    delay(5000);
+    
     
 
     //comment this out unless you mean to do it pls
@@ -121,7 +122,8 @@ void loop() //------------------- LOOP -----------------------------------------
     // * salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
     // * salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
 //take temp reading and convert it to degrees for function 
-    systemTemp = findTemp(takeReading(TEMP_SENSPOWER_PIN, TEMPERATURE_READING_PIN, 3),
+    int tread = round( takeReading(TEMP_SENSPOWER_PIN, TEMPERATURE_READING_PIN, 3) );
+    systemTemp = findTemp(tread,
                           tc1, tc2, tc3); 
 //-----DO SOME MATH WITH SENSOR READINGS  
     //calculate duration for solenoids to be on based on readings
@@ -134,18 +136,19 @@ void loop() //------------------- LOOP -----------------------------------------
     //turn heater on or off - HEATER PINS ARE CURRENTLY DEACTIVATED
     // * adjustTemp(heatTime);
 
-    Serial.print(float(millis()/1000)); Serial.print("  "); Serial.print(heaterState); 
-                                        Serial.print("  "); Serial.println(systemTemp);
+    Serial.print(millis()); Serial.print("  "); Serial.print(heaterState); 
+                                        Serial.print("  "); Serial.println(systemTemp); 
     // time state temp
-    long startTime = 0;
-    long timeh = 60000;
-    int timeoff = 15000;
-    if ((millis()-startTime)<timeh){
+    long timeh = 120000;
+    long timeoff = 120000;
+    static long startTime = -timeoff;
+  
+    if (heaterState==0 && (millis()-startTime)>timeoff){
       digitalWrite(heaterPin, HIGH);
       heaterState = 1;
       startTime = millis();
     }
-    else if (heaterState == 1 && (millis()-startTime)>=timeh && (millis()-startTime)>= timeh + timeoff) {
+    else if (heaterState == 1 && (millis()-startTime)>= timeh) {
       digitalWrite(heaterPin, LOW);
       heaterState = 0;
       startTime = millis();
@@ -234,7 +237,7 @@ float evaluatePolynomial(int x, float c1, float c2) {
     return c1*x + c2;
 }
 // THIS EVALS SECOND DEGREE POLY
-float evaluate2ndPolynomial(int x, float c1, float c2, float c3) {
+float evaluate2ndPolynomial(float x, float c1, float c2, float c3) {
     //evaluates y = c1*x^2 + c2*x + 3 and returns y
     return c1*x*x + c2*x + c3;
 }
@@ -315,7 +318,7 @@ void adjustTemp(float HeaterTime) {
 }
 
 //call with findTemp(analogRead(TEMPERATURE_READING_PIN)); for temperature in degrees Celsius 
-float findTemp(int reading, float c1, float c2, float c3) {
+float findTemp(float reading, float c1, float c2, float c3) {
    return evaluate2ndPolynomial(reading, c1, c2, c3);
    
 }
