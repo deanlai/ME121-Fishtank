@@ -17,6 +17,7 @@ LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 20, 4); // 20x4 LCD screen, 0x27
 
 // delcare global pins and heater state
 const int SALINITY_POWER_PIN = 8;
+const int TEMP_SENSPOWER_PIN = 9;
 const int saltyPin = 10; 
 const int freshPin = 11;
 const int heaterPin = 12;
@@ -26,6 +27,7 @@ void setup()
 {
     // Setup pins and serial comms
     pinMode(SALINITY_POWER_PIN, OUTPUT);
+    pinMode(TEMP_SENSPOWER_PIN, OUTPUT);
     pinMode(saltyPin, OUTPUT);
     pinMode(freshPin, OUTPUT);
     pinMode(heaterPin, OUTPUT);
@@ -73,15 +75,20 @@ void loop() //------------------- LOOP -----------------------------------------
     const float tc1 = 1.5464668e-04;
     const float tc2 = -6.8341165e-02;
     const float tc3 = 1.8217030e+01;
-
+    const float cK1 = 0;      //slope of change in heat v time when heater is on
+    const float cK2 = 0;      // second coeffecient from temp change calibration
+    float tFrontDelay = 0;    //delay from heater to being on to when the system temp starts to change
+    float tEndDelay = 0;      //time it takes residual heat in radiator to dissipate
+    
     // setup variables
     int numReadings = 30;     // number of readings per salinity reading
     int salinityReading;      // current analog reading from salinity sensor
     float salinityPercentage; // current salinity percentage
     float tempReading;        // current analog reading from thermistor
     float systemTemp;         // current temperature of system (deg C)
-    float solTime = 0;
-    int solPin;
+    float heatTime = 0;       // time heater should be on
+    float solTime = 0;        // time solenoid should be open
+    int solPin;               // which solenoid should be open
 
     // declare sigma(analog) and deadtime from calibration
     // note: s & t prefixes refer to salinity and temperature
@@ -93,36 +100,40 @@ void loop() //------------------- LOOP -----------------------------------------
 
     // Compute setpoint from pot reading
     float tSetpoint = findTemp(analogRead(T_SETPOINT_PIN), tc1, tc2, tc3); 
-    float tSigma_analog = 1;
+    float tSigma_analog = 2;
     float tSigma = findTemp(tSigma_analog, tc1, tc2, tc3);
-    systemTemp = findTemp(analogRead(TEMPERATURE_READING_PIN), tc1, tc2, tc3); 
 
     // compute UCL & LCL for salinity and temperature
     float sUCL = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3,
-                                        analogRead(S_SETPOINT_PIN) + 5*sSigma_analog);
+                                        analogRead(S_SETPOINT_PIN) + 3*sSigma_analog);
     float sLCL = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3,
-                                        analogRead(S_SETPOINT_PIN) - 5*sSigma_analog);
+                                        analogRead(S_SETPOINT_PIN) - 3*sSigma_analog);
     
-    float tUCL = findTemp(analogRead(T_SETPOINT_PIN)-3*tSigma_analog, tc1, tc2, tc3); 
-    float tLCL = findTemp(analogRead(T_SETPOINT_PIN)+3*tSigma_analog, tc1, tc2, tc3); 
+    float tUCL = findTemp(analogRead(T_SETPOINT_PIN)+3*tSigma_analog, tc1, tc2, tc3); 
+    float tLCL = findTemp(analogRead(T_SETPOINT_PIN)-3*tSigma_analog, tc1, tc2, tc3); 
 
 //------------------------------- ACTUAL CONTROL  --------------------------------------------------------------------------------------
-    
-    // take a salinity reading and convert to percentage salt
+//-----SENSOR READINGS    
+// take a salinity reading and convert to percentage salt
     salinityReading = takeReading(SALINITY_POWER_PIN, SALINITY_READING_PIN, numReadings);
     salinityPercentage = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, salinityReading);
-    
-    
-    // Adjust salinity using solenoids
+//take temp reading and convert it to degrees for function 
+    systemTemp = findTemp(takeReading(TEMP_SENSPOWER_PIN, TEMPERATURE_READING_PIN, 3),
+                          tc1, tc2, tc3); 
+//-----DO SOME MATH WITH SENSOR READINGS  
+    //calculate duration for solenoids to be on based on readings
     setAdjustmentTimes(salinityPercentage, sSetpoint, sUCL, sLCL, deadtime, &solPin, &solTime);
-    
+    //calculate duration for heater to be on 
+    setHeaterTime(systemTemp, tLCL, tSetpoint, cK1, cK2, tFrontDelay, tEndDelay);
+//-----MAKE CHANGES BASED ON MATH     
     //turn solenoids on or off
     toggleSolenoids(solPin, solTime, deadtime);
-
     //turn heater on or off - HEATER PINS ARE CURRENTLY DEACTIVATED
-    adjustTemp(tLCL, tSetpoint, &heaterState, &systemTemp);
+    adjustTemp(heatTime);
     
-    // Update LCD screen
+    
+    
+//-----UPDATE LCD
     lcdUpdate(sLCL, sSetpoint, sUCL, tLCL, tSetpoint, tUCL, salinityPercentage, systemTemp, heaterState);
     
 } // <-this bracket ends loop
@@ -259,22 +270,36 @@ float setTime(float targetSalinity, float currentSalinity, int addedSalinity, fl
     *time = ( massToAdd / flowRate ) * 1000; // x1000 to convert to ms. Sets solTime in loop() to calculated time
 }
 
-
-void adjustTemp(float LCL, float setpoint, int* heaterState, float* temp) {
-
-  if (*temp < LCL) {
-    //digitalWrite(heaterPin, HIGH);
-    *heaterState = 1;
+//calculate time heater should be on
+float setHeaterTime(float temp, float LCL, float setPoint, float K, float K2, float tFrontDelay, float tEndDelay) {
+  float error;
+  float heaterTime;
+  if (temp<=LCL){
+    error = LCL - temp;
+    heaterTime = tFrontDelay + (error-K2)/K - tEndDelay; //this should give time necessary to correct error
   }
   else {
-    //digitalWrite(heaterPin, LOW);
-    *heaterState = 0;
+    heaterTime = 0;
+  }
+  return heaterTime;
+
+}
+//turn heater on or off based on calculated time
+void adjustTemp(float HeaterTime) {
+  if (heaterState == 0 && HeaterTime>0){
+    digitalWrite(heaterPin, HIGH);
+    heaterState = 1;
+  }
+  else if (heaterState == 1 && HeaterTime == 0) {
+    digitalWrite(heaterPin, LOW);
+    heaterState = 0;
   }
 }
 
 //call with findTemp(analogRead(TEMPERATURE_READING_PIN)); for temperature in degrees Celsius 
 float findTemp(int reading, float c1, float c2, float c3) {
    return evaluate2ndPolynomial(reading, c1, c2, c3);
+   
 }
 
 void systemFlush(){
@@ -382,11 +407,11 @@ void lcdUpdate(float sLCL, float sSP, float sUCL,
     //third row, Temp
     lcd.setCursor(0, 2);
     lcd.print("T:");
-    lcd.setCursor(4, 2);
+    lcd.setCursor(3, 2);
     lcd.print(tLCL, 1);
-    lcd.setCursor(10, 2);
+    lcd.setCursor(9, 2);
     lcd.print(tSP, 1);
-    lcd.setCursor(16, 2);
+    lcd.setCursor(15, 2);
     lcd.print(tUCL, 1);
 
     //fourth row, current states
