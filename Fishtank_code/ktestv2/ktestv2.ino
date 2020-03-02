@@ -135,9 +135,29 @@ void loop() //------------------- LOOP -----------------------------------------
     // * toggleSolenoids(solPin, solTime, deadtime);
     //turn heater on or off - HEATER PINS ARE CURRENTLY DEACTIVATED
     // * adjustTemp(heatTime);
+    const long timeOffStart = 5000;
+    const long timeOn = 5000;
+    const long timeOffEnd = 5000;
+    static long startTime = 0;
 
+    if ((millis()-timeOffStart)<0){
+      digitalWrite(heaterPin, LOW);
+      heaterState = 0;
+      startTime = millis();
+    }
+    else if (heaterState==0 && (millis()-startTime)<timeOn) {
+      digitalWrite(heaterPin, HIGH);
+      heaterState = 1;
+      startTime = millis();
+    }
+    else {
+      digitalWrite(heaterPin, LOW);
+      heaterState = 0;
+    }
     Serial.print(millis()); Serial.print("  "); Serial.print(heaterState); 
                                         Serial.print("  "); Serial.println(systemTemp); 
+
+   /*                                     
     // time state temp
     long timeh = 120000;
     long timeoff = 120000;
@@ -153,7 +173,7 @@ void loop() //------------------- LOOP -----------------------------------------
       heaterState = 0;
       startTime = millis();
     }
-    
+    */
     
 //-----UPDATE LCD
     lcdUpdate(sLCL, sSetpoint, sUCL, tLCL, tSetpoint, tUCL, salinityPercentage, systemTemp, heaterState);
