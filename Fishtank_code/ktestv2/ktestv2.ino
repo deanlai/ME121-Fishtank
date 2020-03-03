@@ -135,22 +135,25 @@ void loop() //------------------- LOOP -----------------------------------------
     // * toggleSolenoids(solPin, solTime, deadtime);
     //turn heater on or off - HEATER PINS ARE CURRENTLY DEACTIVATED
     // * adjustTemp(heatTime);
-    const long timeOffStart = 5000;
-    const long timeOn = 5000;
-    const long timeOffEnd = 5000;
+    const long timeOffStart = 60000;
+    const long timeOn = 300000;
+    const long timeOffEnd = 120000;
     static long startTime = 0;
 
-    if ((millis()-timeOffStart)<0){
+    if (millis()<timeOffStart){
+      
       digitalWrite(heaterPin, LOW);
       heaterState = 0;
       startTime = millis();
     }
-    else if (heaterState==0 && (millis()-startTime)<timeOn) {
+    else if (millis()<(timeOffStart+timeOn)){
+      //Serial.println("there");
       digitalWrite(heaterPin, HIGH);
       heaterState = 1;
       startTime = millis();
     }
     else {
+      //Serial.println("everywhere");
       digitalWrite(heaterPin, LOW);
       heaterState = 0;
     }
