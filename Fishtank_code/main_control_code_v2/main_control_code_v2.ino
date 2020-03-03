@@ -270,7 +270,7 @@ float setTime(float targetSalinity, float currentSalinity, int addedSalinity, fl
 float setHeaterTime(float temp, float LCL, float setPoint, float K, float tFrontDelay, float tEndDelay) {
   float error;
   float heaterTime;
-  if (temp<=LCL || heaterState == 1 && temp<setPoint){
+  if (temp<=LCL || heaterState == 1 && temp<=setPoint){ //if temp goes below LCL turn on heater, then keep it on until temp is @sp
     error = setPoint - temp;
     heaterTime = (error)/K; //this should give time necessary to correct error
   }
