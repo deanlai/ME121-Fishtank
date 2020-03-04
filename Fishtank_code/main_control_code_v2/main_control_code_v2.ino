@@ -75,9 +75,9 @@ void loop() //------------------- LOOP -----------------------------------------
     const float tc1 = 1.5464668e-04;
     const float tc2 = -6.8341165e-02;
     const float tc3 = 1.8217030e+01;
-    const float cK1 = 0;      //slope of change in heat v time when heater is on
-    float tFrontDelay = 0;    //delay from heater to being on to when the system temp starts to change
-    float tEndDelay = 0;      //time it takes residual heat in radiator to dissipate
+    const float cK1 = 0.00100;      //slope of change in heat v time when heater is on
+    float tFrontDelay = 3000;    //delay from heater to being on to when the system temp starts to change
+    float tEndDelay = 3000;      //time it takes residual heat in radiator to dissipate
     
     // setup variables
     int numReadings = 30;     // number of readings per salinity reading
@@ -123,7 +123,7 @@ void loop() //------------------- LOOP -----------------------------------------
     //calculate duration for solenoids to be on based on readings
     setAdjustmentTimes(salinityPercentage, sSetpoint, sUCL, sLCL, deadtime, &solPin, &solTime);
     //calculate duration for heater to be on 
-    setHeaterTime(systemTemp, tLCL, tSetpoint, cK1, tFrontDelay, tEndDelay);
+    heatTime = setHeaterTime(systemTemp, tLCL, tSetpoint, cK1, tFrontDelay, tEndDelay);
 //-----MAKE CHANGES BASED ON MATH     
     //turn solenoids on or off
     toggleSolenoids(solPin, solTime, deadtime);
@@ -270,9 +270,9 @@ float setTime(float targetSalinity, float currentSalinity, int addedSalinity, fl
 float setHeaterTime(float temp, float LCL, float setPoint, float K, float tFrontDelay, float tEndDelay) {
   float error;
   float heaterTime;
-  if (temp<=LCL){
-    error = LCL - temp;
-    heaterTime = tFrontDelay + (error)/K - tEndDelay; //this should give time necessary to correct error
+  if (temp<=LCL || heaterState == 1 && temp<=setPoint){ //if temp goes below LCL turn on heater, then keep it on until temp is @sp
+    error = setPoint - temp;
+    heaterTime = (error)/K; //this should give time necessary to correct error
   }
   else {
     heaterTime = 0;
@@ -379,7 +379,7 @@ void lcdUpdate(float sLCL, float sSP, float sUCL,
     //if/else block to modify heaterState based on whether the heater is on or not, arbitrary var names used here
     if (heater == 1)
     {
-        heaterState = "ON";
+        heaterState = "ON ";
     }
     else
     {
@@ -414,10 +414,10 @@ void lcdUpdate(float sLCL, float sSP, float sUCL,
     lcd.setCursor(0, 3);
     lcd.print("S=");
     lcd.setCursor(2, 3);
-    lcd.print(saltNow);
-    lcd.setCursor(7, 3);
+    lcd.print(saltNow, 3);
+    lcd.setCursor(8, 3);
     lcd.print("T=");
-    lcd.setCursor(9, 3);
+    lcd.setCursor(10, 3);
     lcd.print(tempNow, 1);
     lcd.setCursor(15, 3);
     lcd.print("H=");
