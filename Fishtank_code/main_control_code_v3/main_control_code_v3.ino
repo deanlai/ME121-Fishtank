@@ -269,7 +269,7 @@ float setTime(float targetSalinity, float currentSalinity, int addedSalinity, fl
     *time = ( massToAdd / flowRate ) * 1000; // x1000 to convert to ms. Sets solTime in loop() to calculated time
 }
 
-//calculate time heater should be on
+//calculate time heater should be on (in millis)
 float setHeaterTime(float temp, float LCL, float UCL, float setPoint, float K, float tFrontDelay, float tEndDelay) {
   float error;
   float heaterTime;
@@ -284,19 +284,21 @@ float setHeaterTime(float temp, float LCL, float UCL, float setPoint, float K, f
   return heaterTime;
 
 }
-//turn heater on or off based on calculated time
+//turn heater on or off based on calculated time in millis
 void adjustTemp(float HeaterTime, float tFrontDelay, float tEndDelay) {
   static long startT = -tEndDelay;
-  
+  float onTime;
   
   if (heaterState == 0 && HeaterTime>0 && (millis()-startT) > tEndDelay) {
     digitalWrite(heaterPin, HIGH);
     heaterState = 1;
     starT = millis();
+    onTime = HeaterTime;
   }
-  else if (heaterState == 1 && HeaterTime == 0) {
+  else if (heaterState == 1 && (millis()-starT)>onTime) {
     digitalWrite(heaterPin, LOW);
     heaterState = 0;
+    startT = millis();
   }
 }
 
