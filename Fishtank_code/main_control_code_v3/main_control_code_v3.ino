@@ -88,7 +88,8 @@ void loop() //------------------- LOOP -----------------------------------------
     float heatTime = 0;       // time heater should be on
     float solTime = 0;        // time solenoid should be open
     int solPin;               // which solenoid should be open
-
+    static float loopTime = millis();       //for a loop time check
+    
     // declare sigma(analog) and deadtime from calibration
     // note: s & t prefixes refer to salinity and temperature
     float sSetpoint = findSalinityPercentage(cl1, cl2, ch1, ch2, b1, b2, b3, 
@@ -132,6 +133,8 @@ void loop() //------------------- LOOP -----------------------------------------
     
 //-----UPDATE LCD
     lcdUpdate(sLCL, sSetpoint, sUCL, tLCL, tSetpoint, tUCL, salinityPercentage, systemTemp, heaterState);
+
+    loopTimeCheck(&loopTime);
     
 } // <-this bracket ends loop
 
@@ -282,10 +285,14 @@ float setHeaterTime(float temp, float LCL, float UCL, float setPoint, float K, f
 
 }
 //turn heater on or off based on calculated time
-void adjustTemp(float HeaterTime) {
-  if (heaterState == 0 && HeaterTime>0){
+void adjustTemp(float HeaterTime, float tFrontDelay, float tEndDelay) {
+  static long startT = -tEndDelay;
+  
+  
+  if (heaterState == 0 && HeaterTime>0 && (millis()-startT) > tEndDelay) {
     digitalWrite(heaterPin, HIGH);
     heaterState = 1;
+    starT = millis();
   }
   else if (heaterState == 1 && HeaterTime == 0) {
     digitalWrite(heaterPin, LOW);
@@ -297,6 +304,11 @@ void adjustTemp(float HeaterTime) {
 float findTemp(int reading, float c1, float c2, float c3) {
    return evaluate2ndPolynomial(reading, c1, c2, c3);
    
+}
+
+void loopTimeCheck(float *loopTime){
+  float lTime = millis()-loopTime
+  Serial.print("The loop time is: "); Serial.println(float(lTime/1000));
 }
 
 void systemFlush(){
