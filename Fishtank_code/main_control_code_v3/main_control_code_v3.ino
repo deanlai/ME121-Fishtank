@@ -129,12 +129,12 @@ void loop() //------------------- LOOP -----------------------------------------
     //turn solenoids on or off
     toggleSolenoids(solPin, solTime, deadtime);
     //turn heater on or off - HEATER PINS ARE CURRENTLY DEACTIVATED
-    adjustTemp(heatTime); 
+    adjustTemp(heatTime, tFrontDelay, tEndDelay); 
     
 //-----UPDATE LCD
     lcdUpdate(sLCL, sSetpoint, sUCL, tLCL, tSetpoint, tUCL, salinityPercentage, systemTemp, heaterState);
 
-    loopTimeCheck(&loopTime);
+    Serial.println(loopTimeCheck(&loopTime));
     
 } // <-this bracket ends loop
 
@@ -287,15 +287,15 @@ float setHeaterTime(float temp, float LCL, float UCL, float setPoint, float K, f
 //turn heater on or off based on calculated time in millis
 void adjustTemp(float HeaterTime, float tFrontDelay, float tEndDelay) {
   static long startT = -tEndDelay;
-  float onTime;
+  
   
   if (heaterState == 0 && HeaterTime>0 && (millis()-startT) > tEndDelay) {
     digitalWrite(heaterPin, HIGH);
     heaterState = 1;
-    starT = millis();
-    onTime = HeaterTime;
+    startT = millis();
+    
   }
-  else if (heaterState == 1 && (millis()-starT)>onTime) {
+  else if (heaterState == 1 && (millis()-startT)>HeaterTime) {
     digitalWrite(heaterPin, LOW);
     heaterState = 0;
     startT = millis();
@@ -308,9 +308,11 @@ float findTemp(int reading, float c1, float c2, float c3) {
    
 }
 
-void loopTimeCheck(float *loopTime){
-  float lTime = millis()-loopTime
-  Serial.print("The loop time is: "); Serial.println(float(lTime/1000));
+float loopTimeCheck(float *loopTime){
+  float lT = (millis()-long(loopTime));
+  *loopTime=millis();
+  return lT;
+  
 }
 
 void systemFlush(){
