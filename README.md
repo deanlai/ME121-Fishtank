@@ -23,3 +23,4 @@ For info on how to use VScode for arduino, go here:
 https://learn.sparkfun.com/tutorials/efficient-arduino-programming-with-arduino-cli-and-visual-studio-code/all
 
 All hail!
+All hail!
