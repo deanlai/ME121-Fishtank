@@ -39,7 +39,7 @@ void setup()
     Serial.begin(9600);
 
     //comment this out unless you mean to do it pls
-    //systemFlush();
+    systemFlush();
 }
 
 void loop() //------------------- LOOP ----------------------------------------------------------------------------
